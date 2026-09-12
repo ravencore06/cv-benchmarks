@@ -1,0 +1,14 @@
+{
+  "name": "cv-benchmarks",
+  "version": "0.1.0",
+  "description": "A website for gathering and comparing CV benchmarks",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "start": "npm start --prefix server"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
