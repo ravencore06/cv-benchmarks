@@ -10,6 +10,7 @@ const benchmarkSchema = Joi.object({
   score_std: Joi.number(),
   url: Joi.string().uri().allow(''),
   code_url: Joi.string().uri().allow(''),
+  paper_url: Joi.string().uri().allow(''),
   submitted_by: Joi.string().max(255)
 });
 

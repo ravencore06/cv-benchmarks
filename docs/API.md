@@ -58,7 +58,9 @@ Submit a new benchmark.
   "metric": "mAP",
   "score": 0.537,
   "description": "Description of the benchmark",
-  "url": "https://..."
+  "url": "https://...",
+  "code_url": "https://github.com/...",
+  "paper_url": "https://arxiv.org/abs/..."
 }
 ```
 

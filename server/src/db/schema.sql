@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS benchmarks (
   score_std FLOAT,
   url VARCHAR(512),
   code_url VARCHAR(512),
+  paper_url VARCHAR(512),
   submitted_by VARCHAR(255),
   submission_date TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

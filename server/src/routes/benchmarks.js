@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
       SELECT 
         b.id, b.name, b.description, b.metric, b.score, b.score_std,
         d.name as dataset, m.name as model,
-        b.url, b.code_url, b.submitted_by, b.submission_date,
+        b.url, b.code_url, b.paper_url, b.submitted_by, b.submission_date,
         b.created_at, b.updated_at
       FROM benchmarks b
       LEFT JOIN datasets d ON b.dataset_id = d.id
@@ -116,7 +116,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    const { name, description, dataset, model, metric, score, score_std, url, code_url, submitted_by } = value;
+    const { name, description, dataset, model, metric, score, score_std, url, code_url, paper_url, submitted_by } = value;
 
     // Get or create dataset
     let datasetId = null;
@@ -140,10 +140,10 @@ router.post('/', async (req, res) => {
 
     // Insert benchmark
     const result = await pool.query(
-      `INSERT INTO benchmarks (name, description, dataset_id, model_id, metric, score, score_std, url, code_url, submitted_by, submission_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+      `INSERT INTO benchmarks (name, description, dataset_id, model_id, metric, score, score_std, url, code_url, paper_url, submitted_by, submission_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
        RETURNING *`,
-      [name, description, datasetId, modelId, metric, score, score_std, url, code_url, submitted_by]
+      [name, description, datasetId, modelId, metric, score, score_std, url, code_url, paper_url, submitted_by]
     );
 
     res.status(201).json(result.rows[0]);
@@ -156,7 +156,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, metric, score, score_std, url, code_url } = req.body;
+    const { name, description, metric, score, score_std, url, code_url, paper_url } = req.body;
 
     const result = await pool.query(
       `UPDATE benchmarks 
@@ -167,10 +167,11 @@ router.put('/:id', async (req, res) => {
            score_std = COALESCE($5, score_std),
            url = COALESCE($6, url),
            code_url = COALESCE($7, code_url),
+           paper_url = COALESCE($8, paper_url),
            updated_at = NOW()
-       WHERE id = $8
+       WHERE id = $9
        RETURNING *`,
-      [name, description, metric, score, score_std, url, code_url, id]
+      [name, description, metric, score, score_std, url, code_url, paper_url, id]
     );
 
     if (result.rows.length === 0) {
