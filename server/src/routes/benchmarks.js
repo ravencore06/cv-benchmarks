@@ -3,199 +3,91 @@ const router = express.Router();
 const pool = require('../db/config');
 const { validateBenchmark } = require('../validators/benchmarkValidator');
 
-// GET all benchmarks with pagination and filtering
+const sortableColumns = new Set(['created_at', 'updated_at', 'score', 'name', 'metric']);
+const selectBenchmarks = `
+  SELECT b.id, b.name, b.description, b.metric, b.score, b.score_std,
+    d.name AS dataset, m.name AS model, b.url, b.code_url, b.paper_url,
+    b.submitted_by, b.submission_date, b.created_at, b.updated_at
+  FROM benchmarks b
+  LEFT JOIN datasets d ON b.dataset_id = d.id
+  LEFT JOIN models m ON b.model_id = m.id`;
+
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 20, dataset, model, metric, sort = 'created_at' } = req.query;
-    const offset = (page - 1) * limit;
-
-    let query = `
-      SELECT 
-        b.id, b.name, b.description, b.metric, b.score, b.score_std,
-        d.name as dataset, m.name as model,
-        b.url, b.code_url, b.submitted_by, b.submission_date,
-        b.created_at, b.updated_at
-      FROM benchmarks b
-      LEFT JOIN datasets d ON b.dataset_id = d.id
-      LEFT JOIN models m ON b.model_id = m.id
-      WHERE 1=1
-    `;
+    const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 20, 1), 100);
+    const filters = [];
     const params = [];
-    let paramCount = 1;
-
-    if (dataset) {
-      query += ` AND d.name ILIKE $${paramCount}`;
-      params.push(`%${dataset}%`);
-      paramCount++;
-    }
-
-    if (model) {
-      query += ` AND m.name ILIKE $${paramCount}`;
-      params.push(`%${model}%`);
-      paramCount++;
-    }
-
-    if (metric) {
-      query += ` AND b.metric ILIKE $${paramCount}`;
-      params.push(`%${metric}%`);
-      paramCount++;
-    }
-
-    query += ` ORDER BY b.${sort} DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    params.push(limit, offset);
-
-    const result = await pool.query(query, params);
-
-    // Get total count
-    let countQuery = 'SELECT COUNT(*) FROM benchmarks b LEFT JOIN datasets d ON b.dataset_id = d.id LEFT JOIN models m ON b.model_id = m.id WHERE 1=1';
-    const countParams = [];
-    let countParamCount = 1;
-
-    if (dataset) {
-      countQuery += ` AND d.name ILIKE $${countParamCount}`;
-      countParams.push(`%${dataset}%`);
-      countParamCount++;
-    }
-    if (model) {
-      countQuery += ` AND m.name ILIKE $${countParamCount}`;
-      countParams.push(`%${model}%`);
-      countParamCount++;
-    }
-    if (metric) {
-      countQuery += ` AND b.metric ILIKE $${countParamCount}`;
-      countParams.push(`%${metric}%`);
-      countParamCount++;
-    }
-
-    const countResult = await pool.query(countQuery, countParams);
-    const total = parseInt(countResult.rows[0].count);
-
-    res.json({
-      data: result.rows,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const addFilter = (column, value) => {
+      if (!value) return;
+      params.push(`%${value}%`);
+      filters.push(`${column} ILIKE $${params.length}`);
+    };
+    addFilter('name', req.query.search);
+    addFilter('category', req.query.category);
+    addFilter('task_type', req.query.task_type);
+    addFilter('metric', req.query.metric);
+    const where = filters.length ? ` WHERE ${filters.join(' AND ')}` : '';
+    const countResult = await pool.query(`SELECT COUNT(*) FROM document_benchmarks${where}`, params);
+    params.push(limit, (page - 1) * limit);
+    const dataResult = await pool.query(`SELECT id, name, category, task_type, dataset_url, metric, input_format FROM document_benchmarks${where} ORDER BY name LIMIT $${params.length - 1} OFFSET $${params.length}`, params);
+    const total = Number(countResult.rows[0].count);
+    res.json({ data: dataResult.rows, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-// GET single benchmark
 router.get('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await pool.query(
-      `SELECT 
-        b.*, d.name as dataset, m.name as model
-       FROM benchmarks b
-       LEFT JOIN datasets d ON b.dataset_id = d.id
-       LEFT JOIN models m ON b.model_id = m.id
-       WHERE b.id = $1`,
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Benchmark not found' });
-    }
-
+    const result = await pool.query(`${selectBenchmarks} WHERE b.id = $1`, [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Benchmark not found' });
     res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-// POST new benchmark
 router.post('/', async (req, res) => {
   try {
     const { error, value } = validateBenchmark(req.body);
-    if (error) {
-      return res.status(400).json({ error: error.details[0].message });
-    }
-
-    const { name, description, dataset, model, metric, score, score_std, url, code_url, submitted_by } = value;
-
-    // Get or create dataset
-    let datasetId = null;
-    if (dataset) {
-      const dsResult = await pool.query(
-        'INSERT INTO datasets (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = $1 RETURNING id',
-        [dataset]
-      );
-      datasetId = dsResult.rows[0].id;
-    }
-
-    // Get or create model
-    let modelId = null;
-    if (model) {
-      const mResult = await pool.query(
-        'INSERT INTO models (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = $1 RETURNING id',
-        [model]
-      );
-      modelId = mResult.rows[0].id;
-    }
-
-    // Insert benchmark
+    if (error) return res.status(400).json({ error: error.details[0].message });
+    const dataset = value.dataset ? await pool.query('INSERT INTO datasets (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id', [value.dataset]) : null;
+    const model = value.model ? await pool.query('INSERT INTO models (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id', [value.model]) : null;
     const result = await pool.query(
-      `INSERT INTO benchmarks (name, description, dataset_id, model_id, metric, score, score_std, url, code_url, submitted_by, submission_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
-       RETURNING *`,
-      [name, description, datasetId, modelId, metric, score, score_std, url, code_url, submitted_by]
+      `INSERT INTO benchmarks (name, description, dataset_id, model_id, metric, score, score_std, url, code_url, paper_url, submitted_by, submission_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW()) RETURNING *`,
+      [value.name, value.description, dataset?.rows[0].id || null, model?.rows[0].id || null, value.metric, value.score, value.score_std, value.url, value.code_url, value.paper_url, value.submitted_by]
     );
-
     res.status(201).json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(error.code === '23505' ? 409 : 500).json({ error: error.message });
   }
 });
 
-// PUT update benchmark
 router.put('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, description, metric, score, score_std, url, code_url } = req.body;
-
-    const result = await pool.query(
-      `UPDATE benchmarks 
-       SET name = COALESCE($1, name), 
-           description = COALESCE($2, description),
-           metric = COALESCE($3, metric),
-           score = COALESCE($4, score),
-           score_std = COALESCE($5, score_std),
-           url = COALESCE($6, url),
-           code_url = COALESCE($7, code_url),
-           updated_at = NOW()
-       WHERE id = $8
-       RETURNING *`,
-      [name, description, metric, score, score_std, url, code_url, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Benchmark not found' });
-    }
-
+    const allowed = ['name', 'description', 'metric', 'score', 'score_std', 'url', 'code_url', 'paper_url'];
+    const changes = allowed.filter((field) => req.body[field] !== undefined);
+    if (!changes.length) return res.status(400).json({ error: 'No editable fields supplied' });
+    const params = changes.map((field) => req.body[field]);
+    const assignments = changes.map((field, index) => `${field} = $${index + 1}`);
+    params.push(req.params.id);
+    const result = await pool.query(`UPDATE benchmarks SET ${assignments.join(', ')}, updated_at = NOW() WHERE id = $${params.length} RETURNING *`, params);
+    if (!result.rows.length) return res.status(404).json({ error: 'Benchmark not found' });
     res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-// DELETE benchmark
 router.delete('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await pool.query('DELETE FROM benchmarks WHERE id = $1 RETURNING id', [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Benchmark not found' });
-    }
-
+    const result = await pool.query('DELETE FROM benchmarks WHERE id = $1 RETURNING id', [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Benchmark not found' });
     res.json({ message: 'Benchmark deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS benchmarks (
   score_std FLOAT,
   url VARCHAR(512),
   code_url VARCHAR(512),
+  paper_url VARCHAR(512),
   submitted_by VARCHAR(255),
   submission_date TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -56,8 +57,30 @@ CREATE TABLE IF NOT EXISTS benchmark_metadata (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_benchmarks_dataset ON benchmarks(dataset_id);
-CREATE INDEX idx_benchmarks_model ON benchmarks(model_id);
-CREATE INDEX idx_benchmarks_metric ON benchmarks(metric);
-CREATE INDEX idx_benchmarks_score ON benchmarks(score DESC);
-CREATE INDEX idx_benchmarks_created ON benchmarks(created_at DESC);
+CREATE TABLE IF NOT EXISTS document_benchmarks (
+  id VARCHAR(100) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(100) NOT NULL,
+  task_type VARCHAR(100) NOT NULL,
+  dataset_url VARCHAR(512),
+  metric VARCHAR(100) NOT NULL,
+  input_format VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS submissions (
+  id SERIAL PRIMARY KEY,
+  model_name VARCHAR(255) NOT NULL,
+  organization VARCHAR(255),
+  benchmark_id VARCHAR(100) NOT NULL REFERENCES document_benchmarks(id) ON DELETE RESTRICT,
+  score DOUBLE PRECISION NOT NULL,
+  paper_url VARCHAR(512),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_benchmarks_dataset ON benchmarks(dataset_id);
+CREATE INDEX IF NOT EXISTS idx_benchmarks_model ON benchmarks(model_id);
+CREATE INDEX IF NOT EXISTS idx_benchmarks_metric ON benchmarks(metric);
+CREATE INDEX IF NOT EXISTS idx_benchmarks_score ON benchmarks(score DESC);
+CREATE INDEX IF NOT EXISTS idx_benchmarks_created ON benchmarks(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_submissions_benchmark_score ON submissions(benchmark_id, score DESC);

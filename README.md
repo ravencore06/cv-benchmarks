@@ -26,7 +26,7 @@ cv-benchmarks/
 ### Prerequisites
 - Node.js 16+
 - npm or yarn
-- PostgreSQL 12+
+- A Supabase project (or PostgreSQL 12+ for local development)
 
 ### Installation
 
@@ -43,18 +43,38 @@ cv-benchmarks/
    cp server/.env.example server/.env
    ```
 
+   For Supabase, open your project dashboard, select **Connect**, and copy the
+   **Session pooler** connection string into `server/.env` as `DATABASE_URL`.
+   Keep `sslmode=require` in the URL. Never expose this value in the client or
+   commit it to Git.
+
 4. Set up the database
    ```bash
    cd server
    npm run db:migrate
+   npm run db:seed
    ```
 
-5. Start the development server
+   This applies `server/src/db/schema.sql` to the database named by
+   `DATABASE_URL` (you can alternatively paste that schema into the Supabase
+   SQL Editor), then seeds the benchmark catalog plus 80 sample submissions so
+   the leaderboards have data.
+
+5. Start the backend
    ```bash
+   cd server
    npm run dev
    ```
 
-The app will be available at `http://localhost:3000`
+6. Start the frontend (optional `client/.env` with `VITE_API_URL` if the API
+   is not at `http://localhost:5000`)
+   ```bash
+   cd client
+   npm run dev
+   ```
+
+The frontend will be available at `http://localhost:5173`; the API runs at
+`http://localhost:5000` (root path lists available endpoints).
 
 ## API Documentation
 
