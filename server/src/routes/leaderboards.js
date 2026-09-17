@@ -5,39 +5,27 @@ const pool = require('../db/config');
 // GET leaderboard data
 router.get('/', async (req, res) => {
   try {
-    const { dataset, metric } = req.query;
-
-    let query = `
-      SELECT 
-        m.name as model,
-        d.name as dataset,
-        b.metric,
-        b.score,
-        b.score_std,
-        COUNT(*) as benchmark_count,
-        MAX(b.created_at) as latest_submission
-      FROM benchmarks b
-      LEFT JOIN models m ON b.model_id = m.id
-      LEFT JOIN datasets d ON b.dataset_id = d.id
-      WHERE 1=1
-    `;
     const params = [];
-    let paramCount = 1;
-
-    if (dataset) {
-      query += ` AND d.name = $${paramCount}`;
-      params.push(dataset);
-      paramCount++;
+    const filters = [];
+    if (req.query.benchmark_id) {
+      params.push(req.query.benchmark_id);
+      filters.push(`s.benchmark_id = $${params.length}`);
     }
-
-    if (metric) {
-      query += ` AND b.metric = $${paramCount}`;
-      params.push(metric);
-      paramCount++;
-    }
-
-    query += ` GROUP BY m.name, d.name, b.metric ORDER BY b.score DESC`;
-
+    const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const query = `
+      WITH ranked_submissions AS (
+        SELECT
+          s.benchmark_id,
+          s.model_name,
+          s.organization,
+          s.score,
+          DENSE_RANK() OVER (PARTITION BY s.benchmark_id ORDER BY s.score DESC) AS rank
+        FROM submissions s
+        ${where}
+      )
+      SELECT model_name, organization, benchmark_id, score, rank
+      FROM ranked_submissions
+      ORDER BY benchmark_id, rank, model_name`;
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
