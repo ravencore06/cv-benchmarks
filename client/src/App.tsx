@@ -134,7 +134,7 @@ function Header() {
           <Link href="/explore" className={location === "/explore" ? "active" : ""}>Explore</Link>
           <Link href="/leaderboards" className={location === "/leaderboards" ? "active" : ""}>Leaderboards</Link>
           <a href="#methodology">Methodology</a>
-          <a href="#about">About</a>
+          <Link href="/about" className={location === "/about" ? "active" : ""}>About</Link>
         </nav>
         <div className="header-actions">
           <Link href="/submit" className="text-link">Submit result <ArrowUpRightIcon /></Link>
@@ -148,7 +148,7 @@ function Header() {
 function ArrowUpRightIcon() { return <ArrowDownRight size={15} className="arrow-up-right" />; }
 
 function Footer() {
-  return <footer className="footer" id="about"><div className="footer-grid container"><div><Logo /><p className="footer-copy">An open measurement layer for computer vision research.</p><div className="socials"><a href="https://github.com" aria-label="GitHub"><Github size={16} /></a><a href="https://huggingface.co" aria-label="Hugging Face"><Network size={16} /></a><a href="mailto:hello@visionbench.dev" aria-label="Email"><ExternalLink size={16} /></a></div></div><div><p className="footer-label">Platform</p><Link href="/explore">Explore benchmarks</Link><Link href="/leaderboards">Leaderboards</Link><Link href="/submit">Submit a result</Link></div><div><p className="footer-label">Resources</p><a href="#methodology">Methodology</a><a href="https://github.com">Open data</a><a href="mailto:hello@visionbench.dev">Contact</a></div><div className="footer-status"><span className="status-dot" /> All systems operational <span className="footer-version">v0.9.4 · Sep 2026</span></div></div><div className="container footer-bottom"><span>© 2026 VisionBench</span><span>Built for better baselines.</span></div></footer>;
+  return <footer className="footer" id="about"><div className="footer-grid container"><div><Logo /><p className="footer-copy">An open measurement layer for computer vision research.</p><div className="socials"><a href="https://github.com" aria-label="GitHub"><Github size={16} /></a><a href="https://huggingface.co" aria-label="Hugging Face"><Network size={16} /></a><a href="mailto:hello@visionbench.dev" aria-label="Email"><ExternalLink size={16} /></a></div></div><div><p className="footer-label">Platform</p><Link href="/explore">Explore benchmarks</Link><Link href="/leaderboards">Leaderboards</Link><Link href="/submit">Submit a result</Link></div><div><p className="footer-label">Resources</p><Link href="/about">About VisionBench</Link><a href="#methodology">Methodology</a><a href="https://github.com">Open data</a></div><div className="footer-status"><span className="status-dot" /> All systems operational <span className="footer-version">v0.9.4 · Sep 2026</span></div></div><div className="container footer-bottom"><span>© 2026 VisionBench</span><span>Built for better baselines.</span></div></footer>;
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -260,6 +260,21 @@ function LeaderboardsPage() {
   </main>;
 }
 
+
+function AboutPage() {
+  const principles = [
+    { icon: ShieldCheck, number: "01", title: "Evidence over hype", copy: "Every score is anchored to a dataset, task, metric, and reproducible context so progress can be inspected—not just announced." },
+    { icon: GitCompareArrows, number: "02", title: "Comparisons with context", copy: "We make the details around a result visible: variance, protocol, code, checkpoint, and the decisions that shaped the number." },
+    { icon: Users, number: "03", title: "Built in the open", copy: "Vision research moves faster when baselines, failures, and improvements are easy for the whole community to build on." },
+  ];
+  const timeline = [
+    { year: "2024", title: "The first index", copy: "VisionBench starts as a small shared sheet for tracking vision model results." },
+    { year: "2025", title: "Protocols become public", copy: "Dataset cards, metric definitions, and reproducibility signals become part of every record." },
+    { year: "2026", title: "A measurement layer", copy: "The index grows into an open interface for discovering, comparing, and contributing benchmarks." },
+  ];
+  return <main className="subpage about-page"><section className="about-hero container reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> ABOUT VISIONBENCH</div><h1>Make progress<br /><em>legible.</em></h1><p>VisionBench is an open measurement layer for computer vision—a shared place to understand what changed, why it matters, and what to try next.</p><div className="hero-actions"><Link href="/explore" className="button button-primary">Explore the index <ArrowRight size={16} /></Link><Link href="/submit" className="button button-ghost">Contribute a result <UploadCloud size={16} /></Link></div></div><div className="about-signal glass-panel"><div className="signal-top"><span className="panel-kicker">THE INDEX / LIVE SIGNAL</span><span className="live-pulse" /></div><div className="signal-number">12.4<span>k</span></div><p>submissions indexed across the open vision ecosystem</p><div className="signal-bars"><i style={{ height: "38%" }} /><i style={{ height: "51%" }} /><i style={{ height: "46%" }} /><i style={{ height: "66%" }} /><i style={{ height: "58%" }} /><i style={{ height: "79%" }} /><i style={{ height: "72%" }} /><i style={{ height: "94%" }} /></div><div className="signal-footer"><span>Aug 2025</span><span>Sep 2026</span></div></div></section><section className="about-statement section-light"><div className="container about-statement-grid reveal"><div><div className="eyebrow dark"><span className="eyebrow-line" /> WHY WE EXIST</div><h2>The field has no shortage of results.<br /><em>It needs a better record.</em></h2></div><p>Important findings still live across papers, repositories, spreadsheets, and threads. That makes it difficult to tell whether a new number is genuinely better—or simply measured differently. VisionBench brings the evidence into one navigable, inspectable layer.</p></div></section><section className="section about-principles"><div className="container"><div className="section-heading compact reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> THE VISIONBENCH POINT OF VIEW</div><h2>Simple principles.<br /><em>Higher signal.</em></h2></div><span className="about-section-note">A public good for better baselines.</span></div><div className="principle-grid">{principles.map(({ icon: Icon, number, title, copy }, i) => <article className="principle-card reveal" style={revealStyle(i * 70)} key={number}><div className="principle-top"><span>{number}</span><Icon size={19} /></div><h3>{title}</h3><p>{copy}</p><span className="principle-line" /></article>)}</div></div></section><section className="section about-timeline"><div className="container"><div className="section-heading compact reveal"><div><div className="eyebrow dark"><span className="eyebrow-line" /> A SHORT HISTORY</div><h2>From scattered notes<br />to <em>shared signal.</em></h2></div><a className="text-link" href="https://github.com">See the open source repo <ExternalLink size={14} /></a></div><div className="timeline">{timeline.map(({ year, title, copy }, i) => <div className="timeline-item reveal" style={revealStyle(i * 80)} key={year}><div className="timeline-year">{year}</div><div className="timeline-marker"><span /></div><div className="timeline-copy"><h3>{title}</h3><p>{copy}</p></div></div>)}</div></div></section><section className="about-team"><div className="container about-team-inner reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> BUILT WITH THE COMMUNITY</div><h2>Better measurement<br /><em>is a team sport.</em></h2></div><div className="about-team-copy"><p>VisionBench is shaped by researchers, engineers, and open-source maintainers who believe benchmark infrastructure should be as thoughtful as the models it measures.</p><a href="mailto:hello@visionbench.dev" className="button button-ghost">Start a conversation <ArrowRight size={16} /></a></div></div></section></main>;
+}
+
 function SubmissionPage() {
   const [submitted, setSubmitted] = useState(false);
   const [step, setStep] = useState(1);
@@ -276,7 +291,7 @@ function Field({ label, required, description, error, children }: { label: strin
 }
 
 function App() {
-  return <Layout><Switch><Route path="/" component={HomePage} /><Route path="/explore" component={ExplorerPage} /><Route path="/leaderboards" component={LeaderboardsPage} /><Route path="/submit" component={SubmissionPage} /><Route component={HomePage} /></Switch></Layout>;
+  return <Layout><Switch><Route path="/" component={HomePage} /><Route path="/explore" component={ExplorerPage} /><Route path="/leaderboards" component={LeaderboardsPage} /><Route path="/about" component={AboutPage} /><Route path="/submit" component={SubmissionPage} /><Route component={HomePage} /></Switch></Layout>;
 }
 
 export default App;
