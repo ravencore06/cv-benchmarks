@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Activity,
   ArrowDownRight,
@@ -36,7 +35,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, Route, Switch, useLocation } from "wouter";
-import { benchmarkService, leaderboardService, submissionService, type Benchmark, type LeaderboardEntry } from "./services/api";
 
 const benchmarks = [
   { id: "b1", model: "DINOv2 ViT-L/14", dataset: "ImageNet-1K", task: "Image classification", metric: "Top-1 accuracy", score: "86.3%", date: "Sep 10, 2026", tags: ["PyTorch", "SSL"], delta: "+1.8%" },
@@ -74,63 +72,6 @@ const leaderboardData: Record<string, typeof rankings> = {
     { rank: 6, model: "Mask2Former H", org: "Meta AI Research", score: "75.8", std: "± 0.38", submissions: 16, width: 68, color: "slate" },
   ],
 };
-
-type ResultItem = (typeof benchmarks)[number];
-
-function useBenchmarkData() {
-  const [catalog, setCatalog] = useState<Benchmark[]>([]);
-  const [leaderboards, setLeaderboards] = useState<LeaderboardEntry[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-
-  useEffect(() => {
-    let active = true;
-    Promise.all([benchmarkService.list({ limit: 100 }), leaderboardService.list()])
-      .then(([list, boards]) => {
-        if (!active) return;
-        setCatalog(list.data);
-        setLeaderboards(boards);
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (active) setStatus("error");
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return { catalog, leaderboards, status };
-}
-
-type BenchmarkData = ReturnType<typeof useBenchmarkData>;
-
-function topScoreFor(leaderboards: LeaderboardEntry[], benchmarkId: string) {
-  const scores = leaderboards
-    .filter((entry) => entry.benchmark_id === benchmarkId)
-    .map((entry) => Number(entry.score));
-  return scores.length ? Math.max(...scores) : null;
-}
-
-function formatScore(score: number) {
-  return `${(score * 100).toFixed(1)}%`;
-}
-
-function toResultItems(catalog: Benchmark[], leaderboards: LeaderboardEntry[]): ResultItem[] {
-  return catalog.map((benchmark) => {
-    const top = topScoreFor(leaderboards, benchmark.id);
-    return {
-      id: benchmark.id,
-      model: benchmark.name,
-      dataset: benchmark.category,
-      task: benchmark.task_type,
-      metric: benchmark.metric,
-      score: top !== null ? formatScore(top) : "—",
-      date: benchmark.input_format,
-      tags: [benchmark.input_format, benchmark.category].filter(Boolean).slice(0, 2),
-      delta: "",
-    };
-  });
-}
 
 const features = [
   { icon: Search, title: "Search every result", copy: "Query across datasets, models, tasks, and metrics with filters built for research." },
@@ -192,8 +133,8 @@ function Header() {
         <nav className={`main-nav ${menuOpen ? "is-open" : ""}`} aria-label="Primary navigation">
           <Link href="/explore" className={location === "/explore" ? "active" : ""}>Explore</Link>
           <Link href="/leaderboards" className={location === "/leaderboards" ? "active" : ""}>Leaderboards</Link>
-          <SectionLink href="/#methodology">Methodology</SectionLink>
-          <SectionLink href="/#about">About</SectionLink>
+          <a href="#methodology">Methodology</a>
+          <Link href="/about" className={location === "/about" ? "active" : ""}>About</Link>
         </nav>
         <div className="header-actions">
           <Link href="/submit" className="text-link">Submit result <ArrowUpRightIcon /></Link>
@@ -207,33 +148,7 @@ function Header() {
 function ArrowUpRightIcon() { return <ArrowDownRight size={15} className="arrow-up-right" />; }
 
 function Footer() {
-  return <footer className="footer" id="about"><div className="footer-grid container"><div><Logo /><p className="footer-copy">An open measurement layer for computer vision research.</p><div className="socials"><a href="https://github.com" aria-label="GitHub"><Github size={16} /></a><a href="https://huggingface.co" aria-label="Hugging Face"><Network size={16} /></a><a href="mailto:hello@visionbench.dev" aria-label="Email"><ExternalLink size={16} /></a></div></div><div><p className="footer-label">Platform</p><Link href="/explore">Explore benchmarks</Link><Link href="/leaderboards">Leaderboards</Link><Link href="/submit">Submit a result</Link></div><div><p className="footer-label">Resources</p><SectionLink href="/#methodology">Methodology</SectionLink><a href="https://github.com">Open data</a><a href="mailto:hello@visionbench.dev">Contact</a></div><div className="footer-status"><span className="status-dot" /> All systems operational <span className="footer-version">v0.9.4 · Sep 2026</span></div></div><div className="container footer-bottom"><span>© 2026 VisionBench</span><span>Built for better baselines.</span></div></footer>;
-}
-
-function scrollToHash(target: string) {
-  const id = target.replace(/^#/, "");
-  if (!id) return;
-
-  const element = document.getElementById(id);
-  if (element) {
-    element.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-}
-
-function SectionLink({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
-  return <a href={href} className={className} onClick={(event) => {
-    if (!href.startsWith("/#") && !href.startsWith("#")) return;
-    event.preventDefault();
-
-    const target = href.startsWith("/#") ? href.slice(2) : href;
-    if (window.location.pathname !== "/") {
-      window.location.assign(`/${target}`);
-      return;
-    }
-
-    window.location.hash = target;
-    setTimeout(() => scrollToHash(target), 0);
-  }}>{children}</a>;
+  return <footer className="footer" id="about"><div className="footer-grid container"><div><Logo /><p className="footer-copy">An open measurement layer for computer vision research.</p><div className="socials"><a href="https://github.com" aria-label="GitHub"><Github size={16} /></a><a href="https://huggingface.co" aria-label="Hugging Face"><Network size={16} /></a><a href="mailto:hello@visionbench.dev" aria-label="Email"><ExternalLink size={16} /></a></div></div><div><p className="footer-label">Platform</p><Link href="/explore">Explore benchmarks</Link><Link href="/leaderboards">Leaderboards</Link><Link href="/submit">Submit a result</Link></div><div><p className="footer-label">Resources</p><Link href="/about">About VisionBench</Link><a href="#methodology">Methodology</a><a href="https://github.com">Open data</a></div><div className="footer-status"><span className="status-dot" /> All systems operational <span className="footer-version">v0.9.4 · Sep 2026</span></div></div><div className="container footer-bottom"><span>© 2026 VisionBench</span><span>Built for better baselines.</span></div></footer>;
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -241,9 +156,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   return <div className="app-shell"><Header />{children}<Footer /></div>;
 }
 
-function HomePage({ data }: { data: BenchmarkData }) {
-  const live = toResultItems(data.catalog, data.leaderboards);
-  const recent = live.length ? live.slice(0, 4) : benchmarks.slice(0, 4);
+function HomePage() {
   return <>
     <main>
       <section className="hero-section">
@@ -254,7 +167,7 @@ function HomePage({ data }: { data: BenchmarkData }) {
             <h1>Measure vision.<br /><em>Advance</em> intelligence.</h1>
             <p className="hero-lede">Discover, compare, and contribute the computer-vision benchmarks that move the field forward.</p>
             <div className="hero-actions"><Link href="/explore" className="button button-primary">Explore benchmarks <ArrowRight size={17} /></Link><Link href="/submit" className="button button-ghost">Submit results <UploadCloud size={17} /></Link></div>
-            <div className="hero-footnote"><span className="live-pulse" /> Live index <span className="footnote-separator" /> Updated 4 min ago <span className="footnote-separator" /> <SectionLink href="/#methodology">How it works <ArrowRight size={13} /></SectionLink></div>
+            <div className="hero-footnote"><span className="live-pulse" /> Live index <span className="footnote-separator" /> Updated 4 min ago <span className="footnote-separator" /> <a href="#methodology">How it works <ArrowRight size={13} /></a></div>
           </div>
           <div className="hero-visual reveal" style={revealStyle(160)} aria-label="Live benchmark pulse visualization">
             <div className="visual-label label-left">LIVE BENCHMARK PULSE</div><div className="visual-label label-right">SEP 13 · 20:57 UTC</div>
@@ -276,7 +189,7 @@ function HomePage({ data }: { data: BenchmarkData }) {
 
       <section className="section category-section"><div className="container"><div className="section-heading compact reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> ONE INDEX, EVERY LENS</div><h2>Make the <em>signal</em> legible.</h2></div><Link href="/explore" className="text-link">Browse the index <ArrowRight size={15} /></Link></div><div className="category-grid">{categories.map(({ icon: Icon, eyebrow, title, value, copy, tone }, i) => <Link href="/explore" className={`category-card ${tone} reveal`} style={revealStyle(i * 90)} key={title}><div className="category-top"><span>{eyebrow}</span><Icon size={18} /></div><div className="category-value">{value}</div><h3>{title}</h3><p>{copy}</p><span className="category-link">Explore {title.toLowerCase()} <ArrowRight size={14} /></span></Link>)}</div></div></section>
 
-      <section className="section recent-section"><div className="container"><div className="section-heading compact reveal"><div><div className="eyebrow dark"><span className="eyebrow-line" /> FRESH FROM THE INDEX</div><h2>Results worth <em>seeing.</em></h2></div><Link href="/explore" className="text-link">View all results <ArrowRight size={15} /></Link></div><div className="recent-list">{recent.map((item, i) => <div className="recent-row reveal" style={revealStyle(i * 60)} key={item.id}><div className="recent-rank">0{i + 1}</div><div className="recent-main"><strong>{item.model}</strong><span>{item.dataset} <i>·</i> {item.task}</span></div><div className="recent-tags">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="recent-score"><strong>{item.score}</strong><span>{item.metric}</span></div><div className="recent-trend">{item.delta} <ArrowUpRightIcon /></div></div>)}</div></div></section>
+      <section className="section recent-section"><div className="container"><div className="section-heading compact reveal"><div><div className="eyebrow dark"><span className="eyebrow-line" /> FRESH FROM THE INDEX</div><h2>Results worth <em>seeing.</em></h2></div><Link href="/explore" className="text-link">View all results <ArrowRight size={15} /></Link></div><div className="recent-list">{benchmarks.slice(0, 4).map((item, i) => <div className="recent-row reveal" style={revealStyle(i * 60)} key={item.id}><div className="recent-rank">0{i + 1}</div><div className="recent-main"><strong>{item.model}</strong><span>{item.dataset} <i>·</i> {item.task}</span></div><div className="recent-tags">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="recent-score"><strong>{item.score}</strong><span>{item.metric}</span></div><div className="recent-trend">{item.delta} <ArrowUpRightIcon /></div></div>)}</div></div></section>
 
       <section className="cta-section"><div className="cta-glow" /><div className="container cta-inner reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> YOUR RESULT BELONGS IN THE RECORD</div><h2>Make your benchmark<br /><em>count.</em></h2></div><div className="cta-side"><p>Help the field build on what came before. Submit a result with enough context for someone else to trust it, reproduce it, and go further.</p><Link href="/submit" className="button button-primary">Submit a result <ArrowRight size={17} /></Link></div></div></section>
     </main>
@@ -287,7 +200,7 @@ function PageIntro({ eyebrow, title, copy, action }: { eyebrow: string; title: R
   return <div className="page-intro container reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> {eyebrow}</div><h1>{title}</h1><p>{copy}</p></div>{action}</div>;
 }
 
-function ExplorerPage({ data }: { data: BenchmarkData }) {
+function ExplorerPage() {
   const [query, setQuery] = useState("");
   const [dataset, setDataset] = useState("All datasets");
   const [task, setTask] = useState("All tasks");
@@ -302,31 +215,23 @@ function ExplorerPage({ data }: { data: BenchmarkData }) {
   const [page, setPage] = useState(1);
   const [compareOpen, setCompareOpen] = useState(false);
   const pageSize = 4;
-  const results = useMemo(() => {
-    const live = toResultItems(data.catalog, data.leaderboards);
-    return live.length ? live : benchmarks;
-  }, [data.catalog, data.leaderboards]);
-  const datasetOptions = useMemo(() => [...new Set(results.map((item) => item.dataset))], [results]);
-  const taskOptions = useMemo(() => [...new Set(results.map((item) => item.task))], [results]);
-  const metricOptions = useMemo(() => [...new Set(results.map((item) => item.metric))], [results]);
-  const frameworkOptions = useMemo(() => [...new Set(results.flatMap((item) => item.tags))], [results]);
   const filters = [dataset !== "All datasets" ? dataset : "", task !== "All tasks" ? task : "", metric !== "All metrics" ? metric : "", framework !== "All frameworks" ? framework : "", dateRange !== "Any date" ? dateRange : ""].filter(Boolean);
   const filtered = useMemo(() => {
-    const result = results.filter((item) => {
+    const result = benchmarks.filter((item) => {
       const haystack = `${item.model} ${item.dataset} ${item.task} ${item.metric} ${item.tags.join(" ")}`.toLowerCase();
       const frameworkMatch = framework === "All frameworks" || item.tags.some((tag) => tag.toLowerCase() === framework.toLowerCase());
       return haystack.includes(query.toLowerCase()) && (dataset === "All datasets" || item.dataset === dataset) && (task === "All tasks" || item.task === task) && (metric === "All metrics" || item.metric === metric) && frameworkMatch;
     });
     return [...result].sort((a, b) => sortBy === "Highest score" ? Number.parseFloat(b.score) - Number.parseFloat(a.score) : sortBy === "Oldest first" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
-  }, [query, dataset, task, metric, framework, sortBy, results]);
+  }, [query, dataset, task, metric, framework, sortBy]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
-  const selectedItems = results.filter((item) => compare.includes(item.id));
+  const selectedItems = benchmarks.filter((item) => compare.includes(item.id));
   const changeFilter = (fn: (value: string) => void, value: string) => { setLoading(true); fn(value); setPage(1); window.setTimeout(() => setLoading(false), 300); };
   const clearAll = () => { setQuery(""); setDataset("All datasets"); setTask("All tasks"); setMetric("All metrics"); setFramework("All frameworks"); setDateRange("Any date"); setSortBy("Latest score"); setPage(1); };
   const removeFilter = (filter: string) => { if (filter === dataset) setDataset("All datasets"); else if (filter === task) setTask("All tasks"); else if (filter === metric) setMetric("All metrics"); else if (filter === framework) setFramework("All frameworks"); else setDateRange("Any date"); setPage(1); };
   return <main className="subpage"><PageIntro eyebrow="THE BENCHMARK INDEX" title={<>Find the <em>evidence.</em></>} copy="Search across models, datasets, tasks, and metrics. Compare results with the context to know what actually moved the score." action={<Link href="/submit" className="button button-primary">Submit a result <UploadCloud size={16} /></Link>} />
-    <section className="explorer-section container"><div className="explorer-toolbar glass-panel reveal"><div className="search-box"><Search size={18} /><input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search models, datasets, tasks..." aria-label="Search benchmarks" /><kbd>⌘ K</kbd></div><div className="filter-row"><div className="filter-label"><SlidersHorizontal size={15} /> Filters</div><select value={dataset} onChange={(e) => changeFilter(setDataset, e.target.value)}><option>All datasets</option>{datasetOptions.map((option) => <option key={option}>{option}</option>)}</select><select value={task} onChange={(e) => changeFilter(setTask, e.target.value)}><option>All tasks</option>{taskOptions.map((option) => <option key={option}>{option}</option>)}</select><select value={metric} onChange={(e) => changeFilter(setMetric, e.target.value)}><option>All metrics</option>{metricOptions.map((option) => <option key={option}>{option}</option>)}</select><button className={`filter-button ${showMoreFilters ? "selected" : ""}`} onClick={() => setShowMoreFilters((open) => !open)}><Filter size={15} /> More filters <span className="filter-count">{filters.length}</span></button></div>{showMoreFilters && <div className="more-filter-panel"><label><span>Framework</span><select value={framework} onChange={(e) => changeFilter(setFramework, e.target.value)}><option>All frameworks</option>{frameworkOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label><span>Date added</span><select value={dateRange} onChange={(e) => changeFilter(setDateRange, e.target.value)}><option>Any date</option><option>Past 7 days</option><option>Past 30 days</option><option>This year</option></select></label><button className="clear-inline" onClick={clearAll}>Reset filters</button></div>}</div>
+    <section className="explorer-section container"><div className="explorer-toolbar glass-panel reveal"><div className="search-box"><Search size={18} /><input value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} placeholder="Search models, datasets, tasks..." aria-label="Search benchmarks" /><kbd>⌘ K</kbd></div><div className="filter-row"><div className="filter-label"><SlidersHorizontal size={15} /> Filters</div><select value={dataset} onChange={(e) => changeFilter(setDataset, e.target.value)}><option>All datasets</option><option>ImageNet-1K</option><option>COCO 2017</option><option>SA-1B</option><option>NYUv2</option></select><select value={task} onChange={(e) => changeFilter(setTask, e.target.value)}><option>All tasks</option><option>Image classification</option><option>Object detection</option><option>Segmentation</option><option>Monocular depth</option></select><select value={metric} onChange={(e) => changeFilter(setMetric, e.target.value)}><option>All metrics</option><option>Top-1 accuracy</option><option>mAP @ 50:95</option><option>mIoU</option><option>δ &lt; 1.25</option></select><button className={`filter-button ${showMoreFilters ? "selected" : ""}`} onClick={() => setShowMoreFilters((open) => !open)}><Filter size={15} /> More filters <span className="filter-count">{filters.length}</span></button></div>{showMoreFilters && <div className="more-filter-panel"><label><span>Framework</span><select value={framework} onChange={(e) => changeFilter(setFramework, e.target.value)}><option>All frameworks</option><option>PyTorch</option><option>JAX</option><option>TensorFlow</option><option>Meta</option></select></label><label><span>Date added</span><select value={dateRange} onChange={(e) => changeFilter(setDateRange, e.target.value)}><option>Any date</option><option>Past 7 days</option><option>Past 30 days</option><option>This year</option></select></label><button className="clear-inline" onClick={clearAll}>Reset filters</button></div>}</div>
       <div className="result-head reveal"><div><span className="result-count">{filtered.length}</span> results <span className="muted">/ ranked by {sortBy.toLowerCase()}</span></div><div className="result-tools"><select className="sort-select" value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }}><option>Latest score</option><option>Highest score</option><option>Oldest first</option></select><div className="view-toggle"><button className={viewMode === "cards" ? "active" : ""} onClick={() => setViewMode("cards")} aria-label="Card view"><Layers3 size={15} /></button><button className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")} aria-label="Table view"><BarChart3 size={15} /></button></div></div></div>
       {filters.length > 0 && <div className="active-filters reveal"><span>Active filters</span>{filters.map((filter) => <button key={filter} onClick={() => removeFilter(filter)}>{filter} <X size={12} /></button>)}<button className="clear-filters" onClick={clearAll}>Clear all</button></div>}
       <div className={`result-list ${viewMode === "table" ? "table-result-list" : ""}`}>{loading ? [1, 2, 3].map((n) => <div className="result-card skeleton-card" key={n}><div className="skeleton skeleton-icon" /><div className="skeleton-lines"><span className="skeleton" /><span className="skeleton short" /></div><div className="skeleton skeleton-score" /></div>) : paged.length ? paged.map((item, i) => viewMode === "table" ? <div className="result-table-row reveal" style={revealStyle(i * 35)} key={item.id}><span className="table-model-name"><Code2 size={15} /> {item.model}</span><span>{item.dataset}</span><span>{item.task}</span><strong>{item.score}</strong><button className={`compare-button ${compare.includes(item.id) ? "selected" : ""}`} onClick={() => setCompare((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}>{compare.includes(item.id) ? <Check size={14} /> : <GitCompareArrows size={14} />} {compare.includes(item.id) ? "Added" : "Compare"}</button></div> : <div className="result-card reveal" style={revealStyle(i * 45)} key={item.id}><div className="result-model-icon"><Code2 size={19} /></div><div className="result-details"><div className="result-title-row"><h3>{item.model}</h3><span className="verified"><ShieldCheck size={13} /> verified</span></div><p>{item.dataset} <i>·</i> {item.task}</p><div className="tag-row">{item.tags.map((tag) => <span key={tag}>{tag}</span>)}<span className="date-tag"><Clock3 size={12} /> {item.date}</span></div></div><div className="result-metric"><span>{item.metric}</span><strong>{item.score}</strong><small>{item.delta} vs. prior best <ArrowUpRightIcon /></small></div><button className={`compare-button ${compare.includes(item.id) ? "selected" : ""}`} onClick={() => setCompare((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}>{compare.includes(item.id) ? <Check size={15} /> : <GitCompareArrows size={15} />} {compare.includes(item.id) ? "Added" : "Compare"}</button></div>) : <div className="empty-state reveal"><div className="empty-icon"><Search size={20} /></div><h3>No results found</h3><p>Try a different search or clear the active filters to explore the full index.</p><button className="button button-ghost dark-ghost" onClick={clearAll}>Clear search <RotateCcwIcon /></button></div>}</div>
@@ -339,81 +244,46 @@ function ExplorerPage({ data }: { data: BenchmarkData }) {
 
 function RotateCcwIcon() { return <Activity size={15} />; }
 
-function LeaderboardsPage({ data }: { data: BenchmarkData }) {
+function LeaderboardsPage() {
   const [board, setBoard] = useState("ImageNet-1K");
   const [boardMetric, setBoardMetric] = useState("Top-1 accuracy");
   const [exportNotice, setExportNotice] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const usingLive = data.catalog.length > 0;
-  const current = usingLive ? data.catalog.find((benchmark) => benchmark.id === board) ?? data.catalog[0] : undefined;
-  const boardId = current?.id ?? board;
-  useEffect(() => {
-    if (usingLive && !data.catalog.some((benchmark) => benchmark.id === board)) {
-      setBoard(data.catalog[0].id);
-    }
-  }, [usingLive, data.catalog, board]);
-  const liveEntries = useMemo(
-    () => data.leaderboards.filter((entry) => entry.benchmark_id === boardId).sort((a, b) => Number(a.rank) - Number(b.rank)),
-    [data.leaderboards, boardId],
-  );
-  const topValue = liveEntries.length ? Number(liveEntries[0].score) : 1;
-  const liveRankings = liveEntries.map((entry, index) => ({
-    rank: Number(entry.rank),
-    model: entry.model_name,
-    org: entry.organization ?? "Unknown",
-    score: formatScore(Number(entry.score)),
-    std: "—",
-    submissions: 1,
-    width: Math.max(8, Math.round((Number(entry.score) / topValue) * 96)),
-    color: ["blue", "violet", "indigo", "slate"][index % 4],
-  }));
-  const activeRankings = liveRankings.length ? liveRankings : usingLive ? [] : leaderboardData[board] ?? rankings;
-  const metricLabel = current?.metric ?? (board === "COCO 2017" ? "mAP @ 50:95" : board === "SA-1B" ? "mIoU" : boardMetric);
+  const activeRankings = leaderboardData[board] ?? rankings;
+  const metricLabel = board === "COCO 2017" ? "mAP @ 50:95" : board === "SA-1B" ? "mIoU" : boardMetric;
   const exportBoard = () => { setExportNotice(true); window.setTimeout(() => setExportNotice(false), 2600); };
   return <main className="subpage"><PageIntro eyebrow="THE LEADERBOARD" title={<>See who is <em>moving the line.</em></>} copy="A transparent view of the strongest reported results, ordered by the metrics that matter." action={<button className="button button-ghost" onClick={exportBoard}><Download size={16} /> Export board</button>} />
-    <section className="leaderboard-section container"><div className="board-controls glass-panel reveal"><div><span className="control-label">DATASET</span><select value={board} onChange={(e) => { setBoard(e.target.value); setSelectedModel(null); }}>{usingLive ? data.catalog.map((benchmark) => <option key={benchmark.id} value={benchmark.id}>{benchmark.name}</option>) : <><option>ImageNet-1K</option><option>COCO 2017</option><option>SA-1B</option></>}</select></div><div><span className="control-label">PRIMARY METRIC</span><select value={boardMetric} onChange={(e) => setBoardMetric(e.target.value)}><option>Top-1 accuracy</option><option>mAP @ 50:95</option><option>mIoU</option></select></div><div className="board-updated"><span className="live-pulse" /> Live board <small>Updated 4 min ago</small></div></div>{exportNotice && <div className="board-notice reveal is-visible"><CheckCircle2 size={15} /> Export prepared for {current?.name ?? board} · {metricLabel}</div>}
-      {!activeRankings.length && <div className="board-notice reveal is-visible">No submissions yet for this benchmark. Submit a result to start the board.</div>}
+    <section className="leaderboard-section container"><div className="board-controls glass-panel reveal"><div><span className="control-label">DATASET</span><select value={board} onChange={(e) => { setBoard(e.target.value); setSelectedModel(null); }}><option>ImageNet-1K</option><option>COCO 2017</option><option>SA-1B</option></select></div><div><span className="control-label">PRIMARY METRIC</span><select value={boardMetric} onChange={(e) => setBoardMetric(e.target.value)}><option>Top-1 accuracy</option><option>mAP @ 50:95</option><option>mIoU</option></select></div><div className="board-updated"><span className="live-pulse" /> Live board <small>Updated 4 min ago</small></div></div>{exportNotice && <div className="board-notice reveal is-visible"><CheckCircle2 size={15} /> Export prepared for {board} · {metricLabel}</div>}
       <div className="podium-grid">{activeRankings.slice(0, 3).map((item, i) => <article className={`podium-card podium-${i + 1} reveal`} style={revealStyle(i * 80)} key={item.rank}><div className="podium-top"><span className={`rank-badge rank-${item.rank}`}>{item.rank === 1 ? <Trophy size={15} /> : `0${item.rank}`}</span><span className="podium-delta">+{i === 0 ? "1.8" : i === 1 ? "1.4" : "0.6"}%</span></div><div className={`avatar-mark avatar-${item.color}`}>{item.model.split(" ").map((word) => word[0]).slice(0, 2).join("")}</div><h3>{item.model}</h3><p>{item.org}</p><strong className="podium-score">{item.score}</strong><span className="podium-metric">{board} · {metricLabel}</span><div className="podium-footer"><span><FileText size={13} /> {item.submissions} submissions</span><span><Activity size={13} /> stable</span></div></article>)}</div>
-      <div className="ranking-table-wrap glass-panel reveal"><div className="table-heading"><div><span className="eyebrow dark"><span className="eyebrow-line" /> FULL RANKING · {(current?.name ?? board).toUpperCase()}</span><h2>All submissions</h2></div><button className="text-link" onClick={() => document.getElementById("methodology")?.scrollIntoView({ behavior: "smooth" })}>View methodology <ArrowRight size={15} /></button></div><div className="ranking-table"><div className="ranking-row table-header"><span>RANK</span><span>MODEL</span><span>SCORE</span><span>STD. DEV.</span><span>SUBMISSIONS</span><span /></div>{activeRankings.map((item) => <div className="ranking-row" key={item.rank}><span className={`table-rank ${item.rank <= 3 ? "top" : ""}`}>{String(item.rank).padStart(2, "0")}</span><div className="table-model"><div className={`mini-avatar avatar-${item.color}`}>{item.model.slice(0, 1)}</div><div><strong>{item.model}</strong><small>{item.org}</small></div></div><div className="table-score"><strong>{item.score}</strong><div className="score-bar"><i style={{ width: `${item.width}%` }} /></div></div><span className="table-muted">{item.std}</span><span className="table-muted">{item.submissions}</span><button className="row-more" onClick={() => setSelectedModel(item.model)} aria-label={`View ${item.model} details`}><ArrowRight size={15} /></button></div>)}</div>{selectedModel && <div className="board-detail"><div><span className="eyebrow dark"><span className="eyebrow-line" /> SELECTED SUBMISSION</span><h3>{selectedModel}</h3><p>Verified result · {board} · {metricLabel}</p></div><div className="detail-quick-stats"><span><b>14</b> runs</span><span><b>0.11</b> std. dev.</span><span><b>98%</b> reproducibility</span></div><button className="row-more" onClick={() => setSelectedModel(null)}><X size={16} /></button></div>}</div>
+      <div className="ranking-table-wrap glass-panel reveal"><div className="table-heading"><div><span className="eyebrow dark"><span className="eyebrow-line" /> FULL RANKING · {board.toUpperCase()}</span><h2>All submissions</h2></div><button className="text-link" onClick={() => document.getElementById("methodology")?.scrollIntoView({ behavior: "smooth" })}>View methodology <ArrowRight size={15} /></button></div><div className="ranking-table"><div className="ranking-row table-header"><span>RANK</span><span>MODEL</span><span>SCORE</span><span>STD. DEV.</span><span>SUBMISSIONS</span><span /></div>{activeRankings.map((item) => <div className="ranking-row" key={item.rank}><span className={`table-rank ${item.rank <= 3 ? "top" : ""}`}>{String(item.rank).padStart(2, "0")}</span><div className="table-model"><div className={`mini-avatar avatar-${item.color}`}>{item.model.slice(0, 1)}</div><div><strong>{item.model}</strong><small>{item.org}</small></div></div><div className="table-score"><strong>{item.score}</strong><div className="score-bar"><i style={{ width: `${item.width}%` }} /></div></div><span className="table-muted">{item.std}</span><span className="table-muted">{item.submissions}</span><button className="row-more" onClick={() => setSelectedModel(item.model)} aria-label={`View ${item.model} details`}><ArrowRight size={15} /></button></div>)}</div>{selectedModel && <div className="board-detail"><div><span className="eyebrow dark"><span className="eyebrow-line" /> SELECTED SUBMISSION</span><h3>{selectedModel}</h3><p>Verified result · {board} · {metricLabel}</p></div><div className="detail-quick-stats"><span><b>14</b> runs</span><span><b>0.11</b> std. dev.</span><span><b>98%</b> reproducibility</span></div><button className="row-more" onClick={() => setSelectedModel(null)}><X size={16} /></button></div>}</div>
     </section>
   </main>;
 }
 
-function SubmissionPage({ data }: { data: BenchmarkData }) {
+
+function AboutPage() {
+  const principles = [
+    { icon: ShieldCheck, number: "01", title: "Evidence over hype", copy: "Every score is anchored to a dataset, task, metric, and reproducible context so progress can be inspected—not just announced." },
+    { icon: GitCompareArrows, number: "02", title: "Comparisons with context", copy: "We make the details around a result visible: variance, protocol, code, checkpoint, and the decisions that shaped the number." },
+    { icon: Users, number: "03", title: "Built in the open", copy: "Vision research moves faster when baselines, failures, and improvements are easy for the whole community to build on." },
+  ];
+  const timeline = [
+    { year: "2024", title: "The first index", copy: "VisionBench starts as a small shared sheet for tracking vision model results." },
+    { year: "2025", title: "Protocols become public", copy: "Dataset cards, metric definitions, and reproducibility signals become part of every record." },
+    { year: "2026", title: "A measurement layer", copy: "The index grows into an open interface for discovering, comparing, and contributing benchmarks." },
+  ];
+  return <main className="subpage about-page"><section className="about-hero container reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> ABOUT VISIONBENCH</div><h1>Make progress<br /><em>legible.</em></h1><p>VisionBench is an open measurement layer for computer vision—a shared place to understand what changed, why it matters, and what to try next.</p><div className="hero-actions"><Link href="/explore" className="button button-primary">Explore the index <ArrowRight size={16} /></Link><Link href="/submit" className="button button-ghost">Contribute a result <UploadCloud size={16} /></Link></div></div><div className="about-signal glass-panel"><div className="signal-top"><span className="panel-kicker">THE INDEX / LIVE SIGNAL</span><span className="live-pulse" /></div><div className="signal-number">12.4<span>k</span></div><p>submissions indexed across the open vision ecosystem</p><div className="signal-bars"><i style={{ height: "38%" }} /><i style={{ height: "51%" }} /><i style={{ height: "46%" }} /><i style={{ height: "66%" }} /><i style={{ height: "58%" }} /><i style={{ height: "79%" }} /><i style={{ height: "72%" }} /><i style={{ height: "94%" }} /></div><div className="signal-footer"><span>Aug 2025</span><span>Sep 2026</span></div></div></section><section className="about-statement section-light"><div className="container about-statement-grid reveal"><div><div className="eyebrow dark"><span className="eyebrow-line" /> WHY WE EXIST</div><h2>The field has no shortage of results.<br /><em>It needs a better record.</em></h2></div><p>Important findings still live across papers, repositories, spreadsheets, and threads. That makes it difficult to tell whether a new number is genuinely better—or simply measured differently. VisionBench brings the evidence into one navigable, inspectable layer.</p></div></section><section className="section about-principles"><div className="container"><div className="section-heading compact reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> THE VISIONBENCH POINT OF VIEW</div><h2>Simple principles.<br /><em>Higher signal.</em></h2></div><span className="about-section-note">A public good for better baselines.</span></div><div className="principle-grid">{principles.map(({ icon: Icon, number, title, copy }, i) => <article className="principle-card reveal" style={revealStyle(i * 70)} key={number}><div className="principle-top"><span>{number}</span><Icon size={19} /></div><h3>{title}</h3><p>{copy}</p><span className="principle-line" /></article>)}</div></div></section><section className="section about-timeline"><div className="container"><div className="section-heading compact reveal"><div><div className="eyebrow dark"><span className="eyebrow-line" /> A SHORT HISTORY</div><h2>From scattered notes<br />to <em>shared signal.</em></h2></div><a className="text-link" href="https://github.com">See the open source repo <ExternalLink size={14} /></a></div><div className="timeline">{timeline.map(({ year, title, copy }, i) => <div className="timeline-item reveal" style={revealStyle(i * 80)} key={year}><div className="timeline-year">{year}</div><div className="timeline-marker"><span /></div><div className="timeline-copy"><h3>{title}</h3><p>{copy}</p></div></div>)}</div></div></section><section className="about-team"><div className="container about-team-inner reveal"><div><div className="eyebrow"><span className="eyebrow-line" /> BUILT WITH THE COMMUNITY</div><h2>Better measurement<br /><em>is a team sport.</em></h2></div><div className="about-team-copy"><p>VisionBench is shaped by researchers, engineers, and open-source maintainers who believe benchmark infrastructure should be as thoughtful as the models it measures.</p><a href="mailto:hello@visionbench.dev" className="button button-ghost">Start a conversation <ArrowRight size={16} /></a></div></div></section></main>;
+}
+
+function SubmissionPage() {
   const [submitted, setSubmitted] = useState(false);
   const [step, setStep] = useState(1);
   const [model, setModel] = useState("");
-  const [organization, setOrganization] = useState("");
-  const [score, setScore] = useState("");
-  const [benchmarkId, setBenchmarkId] = useState("");
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!model.trim()) { setError("Add a model name to continue."); setStep(1); return; }
-    if (!benchmarkId) { setError("Choose a benchmark to continue."); setStep(2); return; }
-    if (!score.trim() || Number.isNaN(Number(score))) { setError("Add a numeric score to continue."); setStep(3); return; }
-    setError("");
-    setSaving(true);
-    try {
-      await submissionService.create({
-        model_name: model.trim(),
-        organization: organization.trim() || null,
-        benchmark_id: benchmarkId,
-        score: Number(score),
-      });
-      setSubmitted(true);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err) {
-      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Submission failed. Please try again.";
-      setError(message);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const submit = (event: FormEvent) => { event.preventDefault(); if (!model.trim()) { setError("Add a model name to continue."); setStep(1); return; } setError(""); setSubmitted(true); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const steps = [[1, "Model details"], [2, "Evaluation"], [3, "Results"], [4, "Review"]] as const;
   if (submitted) return <main className="subpage submit-page"><div className="success-state container reveal is-visible"><div className="success-orbit"><div className="success-icon"><CheckCircle2 size={31} /></div></div><div className="eyebrow"><span className="eyebrow-line" /> RECEIVED AND IN REVIEW</div><h1>Your result is<br /><em>in the record.</em></h1><p>Thanks for contributing to the shared measurement layer. We’ll validate the submission and publish it to the index when the checks pass.</p><div className="success-meta"><div><span>Submission ID</span><strong>VB-2026-0913-042</strong></div><div><span>Estimated review</span><strong>~ 1 business day</strong></div></div><div className="hero-actions"><Link href="/explore" className="button button-primary">Explore the index <ArrowRight size={16} /></Link><button className="button button-ghost" onClick={() => setSubmitted(false)}>Submit another</button></div></div></main>;
-  return <main className="subpage submit-page"><PageIntro eyebrow="CONTRIBUTE A RESULT" title={<>Put your work<br /><em>on the map.</em></>} copy="Share the result, the setup, and enough context for someone else to reproduce the comparison." /><section className="submit-layout container"><aside className="submit-sidebar"><div className="progress-label"><span>SUBMISSION FLOW</span><strong>{step} / 4</strong></div><div className="progress-track"><i style={{ width: `${step * 25}%` }} /></div><nav className="step-nav">{steps.map(([number, label]) => <button key={number} className={step === number ? "active" : step > number ? "complete" : ""} onClick={() => setStep(number as number)}><span>{step > number ? <Check size={14} /> : number}</span>{label}</button>)}</nav><div className="submit-aside-note"><CircleHelp size={16} /><div><strong>Need a hand?</strong><p>Read the <SectionLink href="/#methodology">submission guide</SectionLink> or contact our research team.</p></div></div></aside><form className="submit-form glass-panel" onSubmit={submit}><div className="form-header"><div><span className="eyebrow dark"><span className="eyebrow-line" /> STEP {step.toString().padStart(2, "0")}</span><h2>{steps[step - 1][1]}</h2></div><span className="autosave"><Check size={13} /> Autosaved</span></div>{step === 1 && <div className="form-section"><Field label="Model name" required description="Use the public name researchers will recognize." error={error}><input value={model} onChange={(e) => { setModel(e.target.value); setError(""); }} placeholder="e.g. DINOv2 ViT-L/14" /></Field><div className="field-grid"><Field label="Organization" description="Optional · team, lab, or company"><input value={organization} onChange={(e) => { setOrganization(e.target.value); setError(""); }} placeholder="e.g. Meta AI Research" /></Field><Field label="Framework"><select><option>PyTorch</option><option>JAX</option><option>TensorFlow</option><option>Other</option></select></Field></div><Field label="Checkpoint or code URL" description="Link to weights, repository, or an archival release."><div className="input-with-icon"><ExternalLink size={15} /><input placeholder="https://github.com/..." /></div></Field></div>}{step === 2 && <div className="form-section"><div className="field-grid"><Field label="Dataset" required><select value={benchmarkId} onChange={(e) => { setBenchmarkId(e.target.value); setError(""); }}><option value="">Select a benchmark</option>{data.catalog.map((benchmark) => <option key={benchmark.id} value={benchmark.id}>{benchmark.name}</option>)}</select></Field><Field label="Dataset version"><input placeholder="e.g. 1.0 / 2012" /></Field></div><Field label="Task" required><select><option>Image classification</option><option>Object detection</option><option>Segmentation</option><option>Monocular depth</option><option>Image retrieval</option></select></Field><Field label="Evaluation protocol" description="Mention splits, preprocessing, resolution, and any non-default choices."><textarea placeholder="Describe the evaluation setup..." /></Field></div>}{step === 3 && <div className="form-section"><div className="field-grid"><Field label="Primary metric" required><select><option>Top-1 accuracy</option><option>mAP @ 50:95</option><option>mIoU</option><option>δ &lt; 1.25</option></select></Field><Field label="Score" required><input type="number" step="any" value={score} onChange={(e) => { setScore(e.target.value); setError(""); }} placeholder="e.g. 86.3" /></Field></div><div className="field-grid"><Field label="Standard deviation"><input placeholder="e.g. 0.11" /></Field><Field label="Number of runs"><input placeholder="e.g. 3" /></Field></div><Field label="Methodology notes" description="What should a reader know to interpret this score?"><textarea placeholder="Add details on training, inference, and reproducibility..." /></Field></div>}{step === 4 && <div className="form-section review-section"><div className="review-callout"><ShieldCheck size={19} /><div><strong>Almost ready to publish.</strong><p>We’ll run automated checks for formatting, duplicate records, and link availability before review.</p></div></div><div className="review-list"><div><span>Model</span><strong>{model || "Your model name"}</strong><CheckCircle2 size={16} /></div><div><span>Evaluation</span><strong>ImageNet-1K · Image classification</strong><CheckCircle2 size={16} /></div><div><span>Visibility</span><strong>Public in the VisionBench index</strong><CheckCircle2 size={16} /></div></div><label className="checkbox-row"><input type="checkbox" defaultChecked /><span>I confirm this result is reported accurately and linked materials are shareable.</span></label></div>}<div className="form-footer">{step > 1 ? <button type="button" className="button button-ghost dark-ghost" onClick={() => setStep((current) => current - 1)}>Back</button> : <span className="form-hint">Required fields are marked with *</span>}{step < 4 ? <button type="button" className="button button-primary" onClick={() => { if (step === 1 && !model.trim()) { setError("Add a model name to continue."); return; } setStep((current) => current + 1); }}>Continue <ArrowRight size={16} /></button> : <button type="submit" className="button button-primary" disabled={saving}>{saving ? "Submitting..." : "Submit for review"} <ArrowRight size={16} /></button>}</div></form></section></main>;
+  return <main className="subpage submit-page"><PageIntro eyebrow="CONTRIBUTE A RESULT" title={<>Put your work<br /><em>on the map.</em></>} copy="Share the result, the setup, and enough context for someone else to reproduce the comparison." /><section className="submit-layout container"><aside className="submit-sidebar"><div className="progress-label"><span>SUBMISSION FLOW</span><strong>{step} / 4</strong></div><div className="progress-track"><i style={{ width: `${step * 25}%` }} /></div><nav className="step-nav">{steps.map(([number, label]) => <button key={number} className={step === number ? "active" : step > number ? "complete" : ""} onClick={() => setStep(number as number)}><span>{step > number ? <Check size={14} /> : number}</span>{label}</button>)}</nav><div className="submit-aside-note"><CircleHelp size={16} /><div><strong>Need a hand?</strong><p>Read the <a href="#methodology">submission guide</a> or contact our research team.</p></div></div></aside><form className="submit-form glass-panel" onSubmit={submit}><div className="form-header"><div><span className="eyebrow dark"><span className="eyebrow-line" /> STEP {step.toString().padStart(2, "0")}</span><h2>{steps[step - 1][1]}</h2></div><span className="autosave"><Check size={13} /> Autosaved</span></div>{step === 1 && <div className="form-section"><Field label="Model name" required description="Use the public name researchers will recognize." error={error}><input value={model} onChange={(e) => { setModel(e.target.value); setError(""); }} placeholder="e.g. DINOv2 ViT-L/14" /></Field><div className="field-grid"><Field label="Organization" description="Optional · team, lab, or company"><input placeholder="e.g. Meta AI Research" /></Field><Field label="Framework"><select><option>PyTorch</option><option>JAX</option><option>TensorFlow</option><option>Other</option></select></Field></div><Field label="Checkpoint or code URL" description="Link to weights, repository, or an archival release."><div className="input-with-icon"><ExternalLink size={15} /><input placeholder="https://github.com/..." /></div></Field></div>}{step === 2 && <div className="form-section"><div className="field-grid"><Field label="Dataset" required><select><option>ImageNet-1K</option><option>COCO 2017</option><option>SA-1B</option><option>NYUv2</option></select></Field><Field label="Dataset version"><input placeholder="e.g. 1.0 / 2012" /></Field></div><Field label="Task" required><select><option>Image classification</option><option>Object detection</option><option>Segmentation</option><option>Monocular depth</option><option>Image retrieval</option></select></Field><Field label="Evaluation protocol" description="Mention splits, preprocessing, resolution, and any non-default choices."><textarea placeholder="Describe the evaluation setup..." /></Field></div>}{step === 3 && <div className="form-section"><div className="field-grid"><Field label="Primary metric" required><select><option>Top-1 accuracy</option><option>mAP @ 50:95</option><option>mIoU</option><option>δ &lt; 1.25</option></select></Field><Field label="Score" required><input placeholder="e.g. 86.3" /></Field></div><div className="field-grid"><Field label="Standard deviation"><input placeholder="e.g. 0.11" /></Field><Field label="Number of runs"><input placeholder="e.g. 3" /></Field></div><Field label="Methodology notes" description="What should a reader know to interpret this score?"><textarea placeholder="Add details on training, inference, and reproducibility..." /></Field></div>}{step === 4 && <div className="form-section review-section"><div className="review-callout"><ShieldCheck size={19} /><div><strong>Almost ready to publish.</strong><p>We’ll run automated checks for formatting, duplicate records, and link availability before review.</p></div></div><div className="review-list"><div><span>Model</span><strong>{model || "Your model name"}</strong><CheckCircle2 size={16} /></div><div><span>Evaluation</span><strong>ImageNet-1K · Image classification</strong><CheckCircle2 size={16} /></div><div><span>Visibility</span><strong>Public in the VisionBench index</strong><CheckCircle2 size={16} /></div></div><label className="checkbox-row"><input type="checkbox" defaultChecked /><span>I confirm this result is reported accurately and linked materials are shareable.</span></label></div>}<div className="form-footer">{step > 1 ? <button type="button" className="button button-ghost dark-ghost" onClick={() => setStep((current) => current - 1)}>Back</button> : <span className="form-hint">Required fields are marked with *</span>}{step < 4 ? <button type="button" className="button button-primary" onClick={() => { if (step === 1 && !model.trim()) { setError("Add a model name to continue."); return; } setStep((current) => current + 1); }}>Continue <ArrowRight size={16} /></button> : <button type="submit" className="button button-primary">Submit for review <ArrowRight size={16} /></button>}</div></form></section></main>;
 }
 
 function Field({ label, required, description, error, children }: { label: string; required?: boolean; description?: string; error?: string; children: React.ReactNode }) {
@@ -421,8 +291,7 @@ function Field({ label, required, description, error, children }: { label: strin
 }
 
 function App() {
-  const data = useBenchmarkData();
-  return <Layout><Switch><Route path="/"><HomePage data={data} /></Route><Route path="/explore"><ExplorerPage data={data} /></Route><Route path="/leaderboards"><LeaderboardsPage data={data} /></Route><Route path="/submit"><SubmissionPage data={data} /></Route><Route><HomePage data={data} /></Route></Switch></Layout>;
+  return <Layout><Switch><Route path="/" component={HomePage} /><Route path="/explore" component={ExplorerPage} /><Route path="/leaderboards" component={LeaderboardsPage} /><Route path="/about" component={AboutPage} /><Route path="/submit" component={SubmissionPage} /><Route component={HomePage} /></Switch></Layout>;
 }
 
 export default App;
