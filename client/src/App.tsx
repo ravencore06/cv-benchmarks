@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, Route, Switch, useLocation } from "wouter";
+import { Analytics } from "@vercel/analytics/react";
 
 const benchmarks = [
   { id: "b1", model: "DINOv2 ViT-L/14", dataset: "ImageNet-1K", task: "Image classification", metric: "Top-1 accuracy", score: "86.3%", date: "Sep 10, 2026", tags: ["PyTorch", "SSL"], delta: "+1.8%" },
@@ -154,7 +155,7 @@ function Footer() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   useReveal();
-  return <div className="app-shell"><Header />{children}<Footer /></div>;
+  return <div className="app-shell"><Header />{children}<Footer /><Analytics /></div>;
 }
 
 function HomePage() {
