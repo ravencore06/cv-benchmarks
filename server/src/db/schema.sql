@@ -11,11 +11,15 @@ CREATE TABLE IF NOT EXISTS datasets (
 );
 
 CREATE TABLE IF NOT EXISTS models (
-  id SERIAL PRIMARY KEY,
+  id VARCHAR(100) PRIMARY KEY,
   name VARCHAR(255) UNIQUE NOT NULL,
+  organization VARCHAR(255),
   description TEXT,
+  architecture VARCHAR(255),
+  parameters VARCHAR(100),
   url VARCHAR(512),
   paper_url VARCHAR(512),
+  repo_url VARCHAR(512),
   framework VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -26,7 +30,7 @@ CREATE TABLE IF NOT EXISTS benchmarks (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   dataset_id INTEGER REFERENCES datasets(id),
-  model_id INTEGER REFERENCES models(id),
+  model_id VARCHAR(100) REFERENCES models(id),
   metric VARCHAR(100) NOT NULL,
   score FLOAT NOT NULL,
   score_std FLOAT,
@@ -69,9 +73,8 @@ CREATE TABLE IF NOT EXISTS document_benchmarks (
 );
 
 CREATE TABLE IF NOT EXISTS submissions (
-  id SERIAL PRIMARY KEY,
-  model_name VARCHAR(255) NOT NULL,
-  organization VARCHAR(255),
+  id VARCHAR(100) PRIMARY KEY,
+  model_id VARCHAR(100) REFERENCES models(id) ON DELETE SET NULL,
   benchmark_id VARCHAR(100) NOT NULL REFERENCES document_benchmarks(id) ON DELETE RESTRICT,
   score DOUBLE PRECISION NOT NULL,
   paper_url VARCHAR(512),
