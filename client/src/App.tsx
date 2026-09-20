@@ -91,6 +91,7 @@ const categories = [
 const revealStyle = (delay = 0): CSSProperties => ({ "--delay": `${delay}ms` } as CSSProperties);
 
 function useReveal() {
+  const [location] = useLocation();
   useEffect(() => {
     const nodes = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -107,7 +108,7 @@ function useReveal() {
     }, { threshold: 0.12 });
     nodes.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
-  }, []);
+  }, [location]);
 }
 
 function Logo() {
