@@ -2,7 +2,7 @@ import axios from "axios";
 
 const baseURL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
-  "http://localhost:5000/api/v1";
+  (import.meta.env.DEV ? "http://localhost:5000/api/v1" : "https://server-ravens-projects-0947faa8.vercel.app/api/v1");
 
 export const api = axios.create({
   baseURL,

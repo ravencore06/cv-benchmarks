@@ -60,6 +60,12 @@ cv-benchmarks/
    SQL Editor), then seeds the benchmark catalog plus 80 sample submissions so
    the leaderboards have data.
 
+   To replace the sample submissions with real published baselines instead:
+   ```bash
+   cd server
+   npm run db:seed:real
+   ```
+
 5. Start the backend
    ```bash
    cd server

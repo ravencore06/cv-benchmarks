@@ -57,12 +57,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 CV Benchmarks API running on port ${PORT}`);
-  console.log(`🔎 Benchmarks:   http://localhost:${PORT}/api/v1/benchmarks`);
-  console.log(`🏆 Leaderboards: http://localhost:${PORT}/api/v1/leaderboards`);
-  console.log(`❤️  Health:       http://localhost:${PORT}/health`);
-  console.log(`\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 CV Benchmarks API running on port ${PORT}`);
+    console.log(`🔎 Benchmarks:   http://localhost:${PORT}/api/v1/benchmarks`);
+    console.log(`🏆 Leaderboards: http://localhost:${PORT}/api/v1/leaderboards`);
+    console.log(`❤️  Health:       http://localhost:${PORT}/health`);
+    console.log(`\n`);
+  });
+}
 
 module.exports = app;
