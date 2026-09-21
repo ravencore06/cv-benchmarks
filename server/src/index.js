@@ -15,7 +15,24 @@ const corsOrigins = (process.env.CORS_ORIGIN || '*')
   .filter(Boolean);
 
 // Middleware
-app.use(cors({ origin: corsOrigins.includes('*') ? '*' : corsOrigins }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        process.env.NODE_ENV !== 'production' ||
+        corsOrigins.includes('*') ||
+        corsOrigins.includes(origin) ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

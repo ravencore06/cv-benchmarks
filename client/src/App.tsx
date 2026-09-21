@@ -156,7 +156,7 @@ function Footer() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   useReveal();
-  return <div className="app-shell"><Header />{children}<Footer /><Analytics /></div>;
+  return <div className="app-shell"><Header />{children}<Footer />{import.meta.env.PROD ? <Analytics /> : null}</div>;
 }
 
 function HomePage() {
