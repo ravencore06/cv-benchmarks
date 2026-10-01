@@ -35,10 +35,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, Route, Switch, useLocation } from "wouter";
-import { Analytics } from "@vercel/analytics/react";
-import { useLiveData, type BenchmarkCard } from "./services/liveData";
 import DocumentAiDomainPage from "./pages/DocumentAiDomain";
 import BenchmarkDetailPage from "./pages/BenchmarkDetail";
+import MethodologyPage from "./pages/MethodologyPage";
+import { Analytics } from "@vercel/analytics/react";
+import { useLiveData, type BenchmarkCard } from "./services/liveData";
 
 const benchmarks = [
   { id: "b1", model: "DINOv2 ViT-L/14", dataset: "ImageNet-1K", task: "Image classification", metric: "Top-1 accuracy", score: "86.3%", date: "Sep 10, 2026", tags: ["PyTorch", "SSL"], delta: "+1.8%" },
@@ -139,7 +140,7 @@ function Header() {
           <Link href="/explore" className={location === "/explore" ? "active" : ""}>Explore</Link>
           <Link href="/domains/document-ai" className={location.startsWith("/domains") ? "active" : ""}>Document AI</Link>
           <Link href="/leaderboards" className={location === "/leaderboards" ? "active" : ""}>Leaderboards</Link>
-          <a href="/about#methodology">Methodology</a>
+          <a href="/methodology">Methodology</a>
           <Link href="/about" className={location === "/about" ? "active" : ""}>About</Link>
         </nav>
         <div className="header-actions">
@@ -154,7 +155,7 @@ function Header() {
 function ArrowUpRightIcon() { return <ArrowDownRight size={15} className="arrow-up-right" />; }
 
 function Footer() {
-  return <footer className="footer" id="about"><div className="footer-grid container"><div><Logo /><p className="footer-copy">An open measurement layer for computer vision research.</p><div className="socials"><a href="https://github.com" aria-label="GitHub"><Github size={16} /></a><a href="https://huggingface.co" aria-label="Hugging Face"><Network size={16} /></a><a href="mailto:hello@visionbench.dev" aria-label="Email"><ExternalLink size={16} /></a></div></div><div><p className="footer-label">Platform</p><Link href="/explore">Explore benchmarks</Link><Link href="/domains/document-ai">Document AI Domain</Link><Link href="/leaderboards">Leaderboards</Link><Link href="/submit">Submit a result</Link></div><div><p className="footer-label">Resources</p><Link href="/about">About VisionBench</Link><a href="/about#methodology">Methodology</a><a href="https://github.com">Open data</a></div><div className="footer-status"><span className="status-dot" /> All systems operational <span className="footer-version">v0.9.4 · Sep 2026</span></div></div><div className="container footer-bottom"><span>© 2026 VisionBench</span><span>Built for better baselines.</span></div></footer>;
+  return <footer className="footer" id="about"><div className="footer-grid container"><div><Logo /><p className="footer-copy">An open measurement layer for computer vision research.</p><div className="socials"><a href="https://github.com" aria-label="GitHub"><Github size={16} /></a><a href="https://huggingface.co" aria-label="Hugging Face"><Network size={16} /></a><a href="mailto:hello@visionbench.dev" aria-label="Email"><ExternalLink size={16} /></a></div></div><div><p className="footer-label">Platform</p><Link href="/explore">Explore benchmarks</Link><Link href="/domains/document-ai">Document AI Domain</Link><Link href="/leaderboards">Leaderboards</Link><Link href="/submit">Submit a result</Link></div><div><p className="footer-label">Resources</p><Link href="/about">About VisionBench</Link><a href="/methodology">Methodology</a><a href="https://github.com">Open data</a></div><div className="footer-status"><span className="status-dot" /> All systems operational <span className="footer-version">v0.9.4 · Sep 2026</span></div></div><div className="container footer-bottom"><span>© 2026 VisionBench</span><span>Built for better baselines.</span></div></footer>;
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -319,6 +320,7 @@ function App() {
         <Route path="/benchmarks/:benchmarkId" component={BenchmarkDetailPage} />
         <Route path="/leaderboards" component={LeaderboardsPage} />
         <Route path="/about" component={AboutPage} />
+        <Route path="/methodology" component={MethodologyPage} />
         <Route path="/submit" component={SubmissionPage} />
         <Route component={HomePage} />
       </Switch>
