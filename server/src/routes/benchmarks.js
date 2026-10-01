@@ -40,9 +40,48 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const result = await pool.query(`${selectBenchmarks} WHERE b.id = $1`, [req.params.id]);
-    if (!result.rows.length) return res.status(404).json({ error: 'Benchmark not found' });
-    res.json(result.rows[0]);
+    const rawId = req.params.id;
+    // 1. Try document_benchmarks lookup first
+    const docResult = await pool.query(
+      `SELECT id, name, category, task_type, dataset_url, metric, input_format, created_at
+       FROM document_benchmarks
+       WHERE LOWER(id) = LOWER($1) OR LOWER(name) = LOWER($1)`,
+      [rawId]
+    );
+
+    if (docResult.rows.length) {
+      const benchmark = docResult.rows[0];
+      const subsResult = await pool.query(
+        `SELECT s.id, s.model_name, s.organization, s.benchmark_id, s.score, s.paper_url, s.created_at,
+                m.description AS model_description, m.framework AS architecture, m.url AS repo_url
+         FROM submissions s
+         LEFT JOIN models m ON s.model_name = m.name
+         WHERE LOWER(s.benchmark_id) = LOWER($1)
+         ORDER BY s.score DESC`,
+        [benchmark.id]
+      );
+
+      const submissions = subsResult.rows;
+      const bestScore = submissions.length ? Math.max(...submissions.map((s) => s.score)) : null;
+
+      return res.json({
+        ...benchmark,
+        submissions,
+        best_score: bestScore,
+        evaluation_count: submissions.length,
+        evaluated_models_count: new Set(submissions.map((s) => s.model_name)).size,
+      });
+    }
+
+    // 2. Fall back to integer ID lookup on benchmarks table if numeric
+    if (!Number.isNaN(Number(rawId))) {
+      const result = await pool.query(`${selectBenchmarks} WHERE b.id = $1`, [Number.parseInt(rawId, 10)]);
+      if (result.rows.length) {
+        return res.json(result.rows[0]);
+      }
+    }
+
+    return res.status(404).json({ error: 'Benchmark not found' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

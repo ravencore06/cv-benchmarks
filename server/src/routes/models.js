@@ -6,7 +6,11 @@ const pool = require('../db/config');
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM models ORDER BY created_at DESC'
+      `SELECT m.*, COUNT(s.id)::int AS evaluation_count
+       FROM models m
+       LEFT JOIN submissions s ON s.model_name = m.name
+       GROUP BY m.id
+       ORDER BY evaluation_count DESC, m.name ASC`
     );
     res.json(result.rows);
   } catch (err) {

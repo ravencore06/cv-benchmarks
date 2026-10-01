@@ -13,6 +13,7 @@ const datasetRoutes = require('./routes/datasets');
 const modelRoutes = require('./routes/models');
 const leaderboardRoutes = require('./routes/leaderboards');
 const submissionRoutes = require('./routes/submissions');
+const domainRoutes = require('./routes/domains');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -60,6 +61,7 @@ app.get('/api', (req, res) => {
       '/api/v1/models',
       '/api/v1/leaderboards',
       '/api/v1/submissions',
+      '/api/v1/domains/document-ai',
     ],
   });
 });
@@ -70,6 +72,7 @@ app.use('/api/v1/datasets', datasetRoutes);
 app.use('/api/v1/models', modelRoutes);
 app.use('/api/v1/leaderboards', leaderboardRoutes);
 app.use('/api/v1/submissions', submissionRoutes);
+app.use('/api/v1/domains', domainRoutes);
 
 // Static frontend serving & SPA fallback
 function getStaticPath() {
