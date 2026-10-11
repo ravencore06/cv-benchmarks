@@ -78,8 +78,8 @@ export function BenchmarkDetailPage() {
     <main className="subpage benchmark-detail-page">
       {/* NAVIGATION BACK */}
       <div className="container mb-6">
-        <Link href="/domains/document-ai" className="text-link" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#8a95aa", fontSize: "11px" }}>
-          <ArrowLeft size={14} /> Back to Document AI Domain
+        <Link href="/explore" className="text-link" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#8a95aa", fontSize: "11px" }}>
+          <ArrowLeft size={14} /> Back to Explore
         </Link>
       </div>
 
@@ -87,7 +87,7 @@ export function BenchmarkDetailPage() {
       <section className="page-intro container" style={{ paddingBottom: "36px" }}>
         <div>
           <div className="eyebrow">
-            <span className="eyebrow-line" /> DOCUMENT AI BENCHMARK DETAIL
+            <span className="eyebrow-line" /> BENCHMARK DETAIL
           </div>
           <h1>
             {loading ? benchmarkId : benchmark?.name || benchmarkId}
