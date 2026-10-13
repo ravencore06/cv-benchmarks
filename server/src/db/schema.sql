@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS document_benchmarks (
   dataset_url VARCHAR(512),
   metric VARCHAR(100) NOT NULL,
   input_format VARCHAR(100) NOT NULL,
+  task_family VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -78,7 +79,20 @@ CREATE TABLE IF NOT EXISTS submissions (
   benchmark_id VARCHAR(100) NOT NULL REFERENCES document_benchmarks(id) ON DELETE RESTRICT,
   score DOUBLE PRECISION NOT NULL,
   paper_url VARCHAR(512),
+  source_url VARCHAR(512),
+  verification_status VARCHAR(50) DEFAULT 'pending',
+  evaluation_protocol VARCHAR(100) DEFAULT 'paper_reported',
+  dataset_split VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS review_history (
+  id SERIAL PRIMARY KEY,
+  submission_id VARCHAR(100) REFERENCES submissions(id) ON DELETE CASCADE,
+  reviewer VARCHAR(255),
+  comment TEXT,
+  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  change_type VARCHAR(50)
 );
 
 CREATE INDEX IF NOT EXISTS idx_benchmarks_dataset ON benchmarks(dataset_id);

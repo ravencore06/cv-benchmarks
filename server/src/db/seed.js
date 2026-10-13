@@ -54,14 +54,14 @@ async function seed() {
       const model = sampleModels[rank];
       const score = Math.round((base - rank * 0.015) * 10000) / 10000;
       await pool.query(
-        `INSERT INTO submissions (model_name, organization, benchmark_id, score)
-         VALUES ($1, $2, $3, $4)`,
-        [model.name, model.organization, benchmarkId, score],
+        `INSERT INTO submissions (model_id, organization, benchmark_id, score, source_url, verification_status, evaluation_protocol, dataset_split)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [model.name, model.organization, benchmarkId, score, 'https://github.com/cv-benchmarks/demo', 'synthetic', 'demo_generated', 'demo'],
       );
       inserted += 1;
     }
   }
-  console.log(`Seeded ${inserted} sample leaderboard submissions (demo data).`);
+  console.log(`Seeded ${inserted} sample leaderboard submissions (demo data — never treat as scientific results).`);
 }
 
 seed()

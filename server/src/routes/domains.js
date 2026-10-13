@@ -29,19 +29,27 @@ router.get('/document-ai', async (req, res) => {
         db.dataset_url,
         db.metric,
         db.input_format,
+        db.task_family,
         COUNT(s.id)::int AS evaluation_count,
         MAX(s.score) AS best_score,
         (
-          SELECT s2.model_name 
+          SELECT s2.model_id 
           FROM submissions s2 
           WHERE s2.benchmark_id = db.id 
           ORDER BY s2.score DESC 
           LIMIT 1
-        ) AS best_model
+        ) AS best_model_id,
+        (
+          SELECT s2.verification_status 
+          FROM submissions s2 
+          WHERE s2.benchmark_id = db.id 
+          ORDER BY s2.score DESC 
+          LIMIT 1
+        ) AS best_verification_status
       FROM document_benchmarks db
       LEFT JOIN submissions s ON s.benchmark_id = db.id
       WHERE db.id IN (${placeholders})
-      GROUP BY db.id, db.name, db.category, db.task_type, db.dataset_url, db.metric, db.input_format;
+      GROUP BY db.id, db.name, db.category, db.task_type, db.dataset_url, db.metric, db.input_format, db.task_family;
     `;
 
     // 2. Fetch Models Evaluated on Document AI benchmarks
@@ -70,17 +78,19 @@ router.get('/document-ai', async (req, res) => {
     const submissionsQuery = `
       SELECT 
         s.id,
-        s.model_name,
+        s.model_id,
         s.organization,
         s.benchmark_id,
         s.score,
-        s.paper_url,
-        s.created_at,
+        s.source_url,
+        s.verification_status,
+        s.evaluation_protocol,
+        s.dataset_split,
         m.framework AS architecture,
         m.url AS repo_url,
         m.description AS model_description
       FROM submissions s
-      LEFT JOIN models m ON s.model_name = m.name
+      LEFT JOIN models m ON s.model_id = m.name
       WHERE s.benchmark_id IN (${placeholders})
       ORDER BY s.benchmark_id, s.score DESC;
     `;
@@ -105,16 +115,21 @@ router.get('/document-ai', async (req, res) => {
     const task_count = new Set(benchmarks.map((b) => b.task_type)).size;
 
     // Build hierarchy: Domain -> Benchmark -> Submissions -> Model
+    // Filter out synthetic/demo submissions by default to keep leaderboards trustworthy
+    const includeDemo = req.query.include_demo === 'true';
     const hierarchy = benchmarks.map((b) => {
       const bSubmissions = submissions
         .filter((s) => s.benchmark_id === b.id)
+        .filter((s) => includeDemo || s.verification_status !== 'synthetic')
         .map((s) => ({
           submission_id: s.id,
-          model_name: s.model_name,
+          model_id: s.model_id,
           organization: s.organization,
           score: s.score,
-          paper_url: s.paper_url,
-          created_at: s.created_at,
+          source_url: s.source_url,
+          verification_status: s.verification_status,
+          evaluation_protocol: s.evaluation_protocol,
+          dataset_split: s.dataset_split,
           architecture: s.architecture,
           repo_url: s.repo_url,
           model_description: s.model_description,
@@ -126,8 +141,10 @@ router.get('/document-ai', async (req, res) => {
         task_type: b.task_type,
         metric: b.metric,
         dataset_url: b.dataset_url,
+        task_family: b.task_family,
         best_score: b.best_score,
-        best_model: b.best_model,
+        best_model_id: b.best_model_id,
+        best_verification_status: b.best_verification_status,
         evaluations: bSubmissions,
       };
     });

@@ -52,10 +52,10 @@ router.get('/:id', async (req, res) => {
     if (docResult.rows.length) {
       const benchmark = docResult.rows[0];
       const subsResult = await pool.query(
-        `SELECT s.id, s.model_name, s.organization, s.benchmark_id, s.score, s.paper_url, s.created_at,
+        `SELECT s.id, s.model_id, s.organization, s.benchmark_id, s.score, s.source_url, s.verification_status, s.evaluation_protocol, s.dataset_split,
                 m.description AS model_description, m.framework AS architecture, m.url AS repo_url
          FROM submissions s
-         LEFT JOIN models m ON s.model_name = m.name
+         LEFT JOIN models m ON s.model_id = m.id
          WHERE LOWER(s.benchmark_id) = LOWER($1)
          ORDER BY s.score DESC`,
         [benchmark.id]
@@ -69,7 +69,7 @@ router.get('/:id', async (req, res) => {
         submissions,
         best_score: bestScore,
         evaluation_count: submissions.length,
-        evaluated_models_count: new Set(submissions.map((s) => s.model_name)).size,
+        evaluated_models_count: new Set(submissions.map((s) => s.model_name ?? s.model_id)).size,
       });
     }
 

@@ -6,11 +6,29 @@ const pool = require('../db/config');
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT m.*, COUNT(s.id)::int AS evaluation_count
-       FROM models m
-       LEFT JOIN submissions s ON s.model_name = m.name
-       GROUP BY m.id
-       ORDER BY evaluation_count DESC, m.name ASC`
+      `SELECT m.id, m.name, m.description, m.organization, m.framework, m.url, m.paper_url,
+         COALESCE(
+           (SELECT s_org.organization FROM submissions s_org WHERE s_org.model_name = m.name AND s_org.organization IS NOT NULL LIMIT 1),
+           m.organization
+         ) AS resolved_organization,
+         COALESCE(
+           (SELECT s.score FROM submissions s WHERE s.model_name = m.name AND s.verification_status = 'verified' ORDER BY s.score DESC LIMIT 1),
+           0
+         ) AS top_verified_score,
+         COALESCE(
+           (SELECT COUNT(*) FROM submissions s WHERE s.model_name = m.name AND s.verification_status = 'verified'),
+           0
+         ) AS verified_evaluation_count,
+         COALESCE(
+           (SELECT COUNT(*) FROM submissions s WHERE s.model_name = m.name AND s.verification_status = 'synthetic'),
+           0
+         ) AS synthetic_evaluation_count,
+         COALESCE(
+           (SELECT s.evaluation_protocol FROM submissions s WHERE s.model_name = m.name ORDER BY s.score DESC LIMIT 1),
+           'paper_reported'
+         ) AS top_protocol
+      FROM models m
+      ORDER BY verified_evaluation_count DESC, m.name ASC`
     );
     res.json(result.rows);
   } catch (err) {

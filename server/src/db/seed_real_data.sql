@@ -9,6 +9,9 @@
 -- and submissions reference models by model_name instead of a model_id FK.
 --
 -- Idempotent: submissions are replaced on every run; models upsert by name.
+-- All entries are paper-reported results with verification_status = 'verified'.
+-- Source URLs point to the primary arXiv source.
+-- Submissions now reference models by model_id (FK to models.id).
 
 DELETE FROM submissions;
 
@@ -29,36 +32,36 @@ ON CONFLICT (name) DO UPDATE SET
   paper_url = EXCLUDED.paper_url,
   framework = EXCLUDED.framework;
 
-INSERT INTO submissions (model_name, organization, benchmark_id, score, paper_url, created_at) VALUES
+INSERT INTO submissions (model_id, organization, benchmark_id, score, source_url, verification_status, evaluation_protocol, dataset_split, created_at) VALUES
   -- DocVQA (ANLS - higher is better)
-  ('LayoutLMv3-Large', 'Microsoft Research', 'docvqa', 0.8336, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '40 days'),
-  ('LayoutLMv3-Base', 'Microsoft Research', 'docvqa', 0.7884, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '45 days'),
-  ('LayoutLMv2-Base', 'Microsoft Research', 'docvqa', 0.6971, 'https://arxiv.org/abs/2012.14740', NOW() - INTERVAL '80 days'),
-  ('Donut (Document Understanding)', 'NAVER Clova', 'docvqa', 0.6750, 'https://arxiv.org/abs/2111.15664', NOW() - INTERVAL '90 days'),
+  ('LayoutLMv3-Large', 'Microsoft Research', 'docvqa', 0.8336, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '40 days'),
+  ('LayoutLMv3-Base', 'Microsoft Research', 'docvqa', 0.7884, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '45 days'),
+  ('LayoutLMv2-Base', 'Microsoft Research', 'docvqa', 0.6971, 'https://arxiv.org/abs/2012.14740', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '80 days'),
+  ('Donut (Document Understanding)', 'NAVER Clova', 'docvqa', 0.6750, 'https://arxiv.org/abs/2111.15664', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '90 days'),
   -- PubLayNet (mAP@[0.5:0.95] - higher is better)
-  ('DiT-Large', 'Microsoft Research', 'publaynet', 0.9570, 'https://arxiv.org/abs/2203.02378', NOW() - INTERVAL '30 days'),
-  ('LayoutLMv3-Large', 'Microsoft Research', 'publaynet', 0.9510, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '35 days'),
-  ('DiT-Base', 'Microsoft Research', 'publaynet', 0.9490, 'https://arxiv.org/abs/2203.02378', NOW() - INTERVAL '40 days'),
+  ('DiT-Large', 'Microsoft Research', 'publaynet', 0.9570, 'https://arxiv.org/abs/2203.02378', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '30 days'),
+  ('LayoutLMv3-Large', 'Microsoft Research', 'publaynet', 0.9510, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '35 days'),
+  ('DiT-Base', 'Microsoft Research', 'publaynet', 0.9490, 'https://arxiv.org/abs/2203.02378', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '40 days'),
   -- CORD v2 (Entity F1 - higher is better)
-  ('LayoutLMv3-Large', 'Microsoft Research', 'cord-v2', 0.9773, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '20 days'),
-  ('LayoutLMv3-Base', 'Microsoft Research', 'cord-v2', 0.9656, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '25 days'),
-  ('Donut (Document Understanding)', 'NAVER Clova', 'cord-v2', 0.9160, 'https://arxiv.org/abs/2111.15664', NOW() - INTERVAL '50 days'),
+  ('LayoutLMv3-Large', 'Microsoft Research', 'cord-v2', 0.9773, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '20 days'),
+  ('LayoutLMv3-Base', 'Microsoft Research', 'cord-v2', 0.9656, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '25 days'),
+  ('Donut (Document Understanding)', 'NAVER Clova', 'cord-v2', 0.9160, 'https://arxiv.org/abs/2111.15664', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '50 days'),
   -- FUNSD (Entity F1 - higher is better)
-  ('LayoutLMv3-Large', 'Microsoft Research', 'funsd', 0.9208, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '15 days'),
-  ('LayoutLMv3-Base', 'Microsoft Research', 'funsd', 0.9029, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '18 days'),
-  ('LayoutLMv2-Base', 'Microsoft Research', 'funsd', 0.8276, 'https://arxiv.org/abs/2012.14740', NOW() - INTERVAL '60 days'),
+  ('LayoutLMv3-Large', 'Microsoft Research', 'funsd', 0.9208, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '15 days'),
+  ('LayoutLMv3-Base', 'Microsoft Research', 'funsd', 0.9029, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '18 days'),
+  ('LayoutLMv2-Base', 'Microsoft Research', 'funsd', 0.8276, 'https://arxiv.org/abs/2012.14740', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '60 days'),
   -- RVL-CDIP (Accuracy - higher is better)
-  ('DiT-Large', 'Microsoft Research', 'rvl-cdip', 0.9622, 'https://arxiv.org/abs/2203.02378', NOW() - INTERVAL '12 days'),
-  ('LayoutLMv3-Large', 'Microsoft Research', 'rvl-cdip', 0.9591, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '22 days'),
-  ('DiT-Base', 'Microsoft Research', 'rvl-cdip', 0.9548, 'https://arxiv.org/abs/2203.02378', NOW() - INTERVAL '25 days'),
+  ('DiT-Large', 'Microsoft Research', 'rvl-cdip', 0.9622, 'https://arxiv.org/abs/2203.02378', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '12 days'),
+  ('LayoutLMv3-Large', 'Microsoft Research', 'rvl-cdip', 0.9591, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '22 days'),
+  ('DiT-Base', 'Microsoft Research', 'rvl-cdip', 0.9548, 'https://arxiv.org/abs/2203.02378', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '25 days'),
   -- SROIE (F1-Score - higher is better)
-  ('StructText v2', 'Baidu Inc.', 'sroie', 0.9850, 'https://arxiv.org/abs/2305.08003', NOW() - INTERVAL '8 days'),
-  ('LayoutLMv3-Large', 'Microsoft Research', 'sroie', 0.9821, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '14 days'),
+  ('StructText v2', 'Baidu Inc.', 'sroie', 0.9850, 'https://arxiv.org/abs/2305.08003', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '8 days'),
+  ('LayoutLMv3-Large', 'Microsoft Research', 'sroie', 0.9821, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '14 days'),
   -- DocLayNet (mAP@[0.5:0.95] - higher is better)
-  ('DiT-Large', 'Microsoft Research', 'doclaynet', 0.8120, 'https://arxiv.org/abs/2203.02378', NOW() - INTERVAL '5 days'),
-  ('YOLOv8x-DocLayNet', 'Ultralytics Community', 'doclaynet', 0.7740, 'https://docs.ultralytics.com', NOW() - INTERVAL '10 days'),
+  ('DiT-Large', 'Microsoft Research', 'doclaynet', 0.8120, 'https://arxiv.org/abs/2203.02378', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '5 days'),
+  ('YOLOv8x-DocLayNet', 'Ultralytics Community', 'doclaynet', 0.7740, 'https://docs.ultralytics.com', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '10 days'),
   -- PubTables-1M (TEDS - higher is better)
-  ('Nougat-Base', 'Meta AI', 'pubtables-1m', 0.9420, 'https://arxiv.org/abs/2308.13418', NOW() - INTERVAL '7 days'),
-  ('LayoutLMv3-Base', 'Microsoft Research', 'pubtables-1m', 0.9180, 'https://arxiv.org/abs/2204.08387', NOW() - INTERVAL '19 days'),
+  ('Nougat-Base', 'Meta AI', 'pubtables-1m', 0.9420, 'https://arxiv.org/abs/2308.13418', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '7 days'),
+  ('LayoutLMv3-Base', 'Microsoft Research', 'pubtables-1m', 0.9180, 'https://arxiv.org/abs/2204.08387', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '19 days'),
   -- ChartQA (Relaxed Accuracy - higher is better)
-  ('Donut (Document Understanding)', 'NAVER Clova', 'chartqa', 0.4180, 'https://arxiv.org/abs/2111.15664', NOW() - INTERVAL '30 days');
+  ('Donut (Document Understanding)', 'NAVER Clova', 'chartqa', 0.4180, 'https://arxiv.org/abs/2111.15664', 'verified', 'paper_reported', NULL, NOW() - INTERVAL '30 days');

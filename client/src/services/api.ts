@@ -17,15 +17,20 @@ export interface Benchmark {
   dataset_url: string | null;
   metric: string;
   input_format: string;
+  task_family?: string;
 }
 
 export interface SubmissionDetail {
   id: string;
+  model_id: string;
   model_name: string;
   organization: string | null;
   benchmark_id: string;
   score: number;
-  paper_url: string | null;
+  source_url: string | null;
+  verification_status: 'verified' | 'synthetic' | 'pending' | 'quarantined';
+  evaluation_protocol: 'paper_reported' | 'demo_generated' | 'independently_reproduced';
+  dataset_split?: string;
   created_at: string;
   model_description?: string;
   architecture?: string;
@@ -55,6 +60,9 @@ export interface DomainModel {
   paper_url: string | null;
   evaluation_count: number;
   evaluated_benchmarks: string[];
+  verified_evaluation_count?: number;
+  synthetic_evaluation_count?: number;
+  top_protocol?: string;
 }
 
 export interface DomainHierarchyNode {
@@ -64,7 +72,8 @@ export interface DomainHierarchyNode {
   metric: string;
   dataset_url: string | null;
   best_score: number | null;
-  best_model: string | null;
+  best_model_id: string | null;
+  best_verification_status: 'verified' | 'synthetic' | 'pending' | 'quarantined';
   evaluations: SubmissionDetail[];
 }
 

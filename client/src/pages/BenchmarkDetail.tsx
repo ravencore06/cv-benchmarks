@@ -230,16 +230,26 @@ export function BenchmarkDetailPage() {
                       )}
                     </span>
                     <div>
-                      {sub.paper_url && (
+                      {sub.source_url && (
                         <a
-                          href={sub.paper_url}
+                          href={sub.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          aria-label={`View paper for ${sub.model_name}`}
+                          aria-label={`View source for ${sub.model_name}`}
                           style={{ color: "#789cff" }}
                         >
                           <ExternalLink size={14} />
                         </a>
+                      )}
+                      {sub.verification_status === 'verified' && (
+                        <span style={{ fontSize: "10px", color: "#68d1ae", marginLeft: "8px" }}>
+                          ✓ Verified
+                        </span>
+                      )}
+                      {sub.verification_status === 'synthetic' && (
+                        <span style={{ fontSize: "10px", color: "#f87171", marginLeft: "8px" }}>
+                          ◳ Demo
+                        </span>
                       )}
                     </div>
                   </div>
