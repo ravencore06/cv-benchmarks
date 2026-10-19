@@ -205,6 +205,9 @@ function vitePluginStorageProxy(): Plugin {
 
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
 
+// Mark Node.js built-in modules as external for esbuild production bundle
+const esbuildExternals = ['cors', 'joi', 'dotenv', 'pg', 'express', 'bcrypt', 'jsonwebtoken'];
+
 export default defineConfig({
   plugins,
   resolve: {
@@ -219,6 +222,11 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Mark Node.js built-in modules as external for esbuild
+    // so they are resolved at runtime rather than bundled
+    esbuild: {
+      external: [...esbuildExternals],
+    },
   },
   server: {
     port: 3000,
