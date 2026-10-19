@@ -251,6 +251,11 @@ export function BenchmarkDetailPage() {
                           ◳ Demo
                         </span>
                       )}
+                      {sub.verification_status === 'pending' && (
+                        <span style={{ fontSize: "10px", color: "#e6e6e6", marginLeft: "8px" }}>
+                          ⟳ Pending
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
